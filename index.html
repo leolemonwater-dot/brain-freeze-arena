@@ -1303,11 +1303,11 @@
       <div class="declare-controls">
         <div class="declare-input-group">
           <button onclick="changeDeclareMove(-1)"
-            style="width:40px; height:40px; font-size:1.3rem; font-weight:700; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; line-height:1;">－</button>
+            style="width:40px; height:40px; font-size:1.3rem; font-weight:700; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; line-height:1; touch-action:manipulation;">－</button>
           <span id="declare-moves-display"
             style="min-width:48px; text-align:center; font-size:1.4rem; font-weight:800; color:#1f2937;">3</span>
           <button onclick="changeDeclareMove(1)"
-            style="width:40px; height:40px; font-size:1.3rem; font-weight:700; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; line-height:1;">＋</button>
+            style="width:40px; height:40px; font-size:1.3rem; font-weight:700; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; line-height:1; touch-action:manipulation;">＋</button>
           <span style="font-weight:600; font-size:1rem; color:#374151;">手</span>
         </div>
         <button id="declare-btn" onclick="onDeclare()">宣言</button>
@@ -1375,11 +1375,9 @@
     function goToSoloMode() {
       currentGameType = 'solo';
       showScreen('game-screen');
-      document.getElementById('declare-panel').style.display = 'none';
+      document.getElementById('declare-panel').style.display = 'block';
       // ソロモード用ボタンを表示
       document.getElementById('solo-buttons').style.display = 'flex';
-      // 方向ボタンを表示
-      document.getElementById('direction-buttons').classList.add('visible');
       generateBoard();
     }
 
@@ -1416,6 +1414,8 @@
 
     // ---- 結果画面のボタン ----
     function onResultOffline() {
+      // オンラインフラグをリセット
+      onlineModeActive = false;
       showScreen('setup-screen');
       renderSetupPlayers(); // 前回のプレイヤーを保持
     }
@@ -1460,6 +1460,8 @@
 
     function onStartGame() {
       if (setupPlayers.length < 2) { alert('プレイヤーを2人以上追加してください'); return; }
+      // オフラインモードを明示的に設定
+      onlineModeActive = false;
       showScreen('game-screen');
       document.getElementById('declare-panel').style.display = 'block';
       startGame(selectedMode, setupPlayers.map(p => p.name));

@@ -104,6 +104,10 @@ function _setupListeners() {
 
   // ラウンド開始
   onlineSocket.on('roundStarted', ({ round, mode, totalRounds }) => {
+    // ラウンド情報をローカルに反映
+    if (typeof _setOnlineGameMode === 'function') {
+      _setOnlineGameMode(mode, round);
+    }
     updateRoundInfo();
   });
 
@@ -210,7 +214,7 @@ function _setupListeners() {
 
   // ラウンド終了
   // ラウンド終了
-  onlineSocket.on('roundEnded', ({ winnerId, points, players: serverPlayers }) => {
+  onlineSocket.on('roundEnded', ({ winnerId, points, additionalStartSec, players: serverPlayers }) => {
     // サーバーのスコアをローカルに反映
     serverPlayers.forEach(sp => {
       const p = getPlayerById(sp.id);
@@ -228,11 +232,23 @@ function _setupListeners() {
       const winnerName = winner?.name ?? '?';
 
       if (winnerId === myPlayerId) {
-        // 自分が正解者 → 既にgame.jsでポップアップ表示済みなのでステータスのみ
-        setStatus(`正解！ ${winnerName} が1本獲得`);
+        // 自分が正解者
+        setStatus(`正解！ ${winnerName} が獲得`);
+        // Score Modeの場合は得点ポップアップ
+        if (getGameMode() === 'score' && points > 0) {
+          const decl = winner?.declaration;
+          const msg = `🎉 ${additionalStartSec}秒 × ${decl?.moves ?? '?'}手 = ${points}点`;
+          _showOnlineResultPopup(msg, true);
+        }
       } else {
-        // 相手が正解者 → ポップアップで通知
-        _showOnlineResultPopup(`${winnerName} の正解！🎉`);
+        // 相手が正解者
+        if (getGameMode() === 'score' && points > 0) {
+          const decl = getPlayerById(winnerId)?.declaration;
+          const msg = `${winnerName} の正解！\n${additionalStartSec}秒 × ${decl?.moves ?? '?'}手 = ${points}点`;
+          _showOnlineResultPopup(msg, true);
+        } else {
+          _showOnlineResultPopup(`${winnerName} の正解！🎉`);
+        }
         setStatus(`${winnerName} の正解！`);
       }
     } else {

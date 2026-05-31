@@ -411,7 +411,9 @@ function updateRoundInfo() {
   if (!roundInfoEl) return;
   const round   = getCurrentRound();
   const mode    = getGameMode();
-  const modeStr = mode === 'quick' ? 'Quick Mode' : `Score Mode (${round}/${SCORE_ROUNDS}ラウンド)`;
+  const modeStr = mode === 'quick'
+    ? `Quick Mode (${round}ラウンド目)`
+    : `Score Mode (${round}/${SCORE_ROUNDS}ラウンド)`;
   roundInfoEl.textContent = round > 0 ? modeStr : '';
 }
 

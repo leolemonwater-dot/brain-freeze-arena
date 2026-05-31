@@ -31,6 +31,10 @@ class TimerManager {
     const interval = setInterval(() => {
       remaining--;
 
+      // Mapのオブジェクトも更新する
+      const timerObj = this.timers.get(roomId);
+      if (timerObj) timerObj.remaining = remaining;
+
       // クライアントに通知
       this.io.to(roomId).emit('timerTick', { phase, remaining });
       if (onTick) onTick(remaining);

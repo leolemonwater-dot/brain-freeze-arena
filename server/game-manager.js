@@ -355,6 +355,7 @@ class GameManager {
     this.io.to(room.id).emit('roundEnded', {
       winnerId,
       points,
+      additionalStartSec: gs.additionalStartSec,
       players: room.players.map(p => ({
         id: p.id,
         name: p.name,
