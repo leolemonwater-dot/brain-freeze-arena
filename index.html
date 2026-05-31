@@ -1462,6 +1462,8 @@
       if (setupPlayers.length < 2) { alert('プレイヤーを2人以上追加してください'); return; }
       // オフラインモードを明示的に設定
       onlineModeActive = false;
+      // ソロボタンを非表示
+      document.getElementById('solo-buttons').style.display = 'none';
       showScreen('game-screen');
       document.getElementById('declare-panel').style.display = 'block';
       startGame(selectedMode, setupPlayers.map(p => p.name));

@@ -165,6 +165,7 @@ function setupLobbyListeners(sock) {
     currentGameType = 'online';
     showScreen('game-screen');
     document.getElementById('declare-panel').style.display = 'block';
+    document.getElementById('solo-buttons').style.display = 'none';
 
     // ゲームイベントリスナーを設定（online.jsの関数）
     _setupListeners();
