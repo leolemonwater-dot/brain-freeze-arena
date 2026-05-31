@@ -558,12 +558,15 @@ function onDeclare() {
   if (isOnlineMode()) {
     // オンライン：サーバーに送信
     sendDeclareOnline(movesVal);
-    // 宣言ボタンをグレーアウト（即時）
     const declareBtn = document.getElementById('declare-btn');
     if (declareBtn) {
       declareBtn.disabled = true;
       declareBtn.style.opacity = '0.5';
     }
+  } else if (currentGameType === 'solo') {
+    // ソロ：プレイヤー選択不要、そのまま宣言（ソロはラウンド管理なし）
+    // 宣言手数を記録して解答フェーズへ（ソロ用の簡易処理）
+    selectedPlayerId = 'solo';
   } else {
     // オフライン：ローカルで処理
     if (!selectedPlayerId) {
@@ -571,7 +574,6 @@ function onDeclare() {
       return;
     }
     handleDeclare(selectedPlayerId, movesVal);
-    // 宣言時のバウンスアニメーション
     const playerCard = document.querySelector('.player-score.selected-player');
     if (playerCard) {
       playerCard.classList.add('bounce');
@@ -586,10 +588,10 @@ function handlePass() {
 
   if (phase === 'thinking' || phase === 'additional') {
     if (isOnlineMode()) {
-      // オンライン：サーバーに送信
       sendPassOnline();
+    } else if (currentGameType === 'solo') {
+      // ソロ：パス不要（何もしない）
     } else {
-      // オフライン：ローカルで処理
       if (!selectedPlayerId) {
         alert('プレイヤーを選択してください（スコアボードのカードをクリック）');
         return;
