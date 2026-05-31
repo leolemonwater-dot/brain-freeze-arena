@@ -967,7 +967,6 @@
     #direction-buttons {
       display: none;
       justify-content: center;
-      gap: 8px;
       padding: 8px 16px 0 16px;
     }
 
@@ -975,11 +974,17 @@
       display: flex;
     }
 
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(3, 56px);
+      gap: 4px;
+    }
+
     .dir-btn {
-      flex: 1;
-      max-width: 72px;
-      padding: 12px 0;
-      font-size: 1.3rem;
+      width: 56px;
+      height: 56px;
+      font-size: 1.4rem;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
       border: none;
@@ -989,11 +994,36 @@
       transition: all 0.15s;
       user-select: none;
       -webkit-user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .dir-btn:active {
       transform: scale(0.93);
       box-shadow: 0 1px 4px rgba(102,126,234,0.3);
+    }
+
+    .dpad-empty {
+      width: 56px;
+      height: 56px;
+    }
+
+    .dpad-center {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .dpad-center img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
     }
     #declare-panel {
       position: fixed;
@@ -1243,12 +1273,24 @@
       </button>
     </div>
 
-    <!-- 方向ボタン（スマホ用） -->
+    <!-- 方向ボタン（スマホ用・十字型） -->
     <div id="direction-buttons">
-      <button class="dir-btn" ontouchstart="moveSelectedRobot(-1,0)" onclick="moveSelectedRobot(-1,0)">←</button>
-      <button class="dir-btn" ontouchstart="moveSelectedRobot(0,-1)" onclick="moveSelectedRobot(0,-1)">↑</button>
-      <button class="dir-btn" ontouchstart="moveSelectedRobot(0,1)"  onclick="moveSelectedRobot(0,1)">↓</button>
-      <button class="dir-btn" ontouchstart="moveSelectedRobot(1,0)"  onclick="moveSelectedRobot(1,0)">→</button>
+      <div class="dpad">
+        <!-- 行1: 空・↑・空 -->
+        <div class="dpad-empty"></div>
+        <button class="dir-btn" ontouchstart="moveSelectedRobot(0,-1)" onclick="moveSelectedRobot(0,-1)">↑</button>
+        <div class="dpad-empty"></div>
+        <!-- 行2: ←・ペンギン・→ -->
+        <button class="dir-btn" ontouchstart="moveSelectedRobot(-1,0)" onclick="moveSelectedRobot(-1,0)">←</button>
+        <div class="dpad-center">
+          <img id="dpad-penguin" src="" alt="selected" />
+        </div>
+        <button class="dir-btn" ontouchstart="moveSelectedRobot(1,0)" onclick="moveSelectedRobot(1,0)">→</button>
+        <!-- 行3: 空・↓・空 -->
+        <div class="dpad-empty"></div>
+        <button class="dir-btn" ontouchstart="moveSelectedRobot(0,1)" onclick="moveSelectedRobot(0,1)">↓</button>
+        <div class="dpad-empty"></div>
+      </div>
     </div>
 
     <!-- 宣言パネル（固定下部） -->

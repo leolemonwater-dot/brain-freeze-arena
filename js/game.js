@@ -98,6 +98,8 @@ function placeRobotsAndGoal() {
       document.querySelectorAll('.robot').forEach(ro => removeRobotAura(ro));
       addRobotAura(robotEl);
       selectedRobot = robotEl;
+      // 十字キー中央のペンギン画像を更新
+      _updateDpadPenguin(robotEl.dataset.color);
     });
     robots.push(r);
   });
@@ -290,6 +292,22 @@ function generateBoard() {
   console.error(`${maxAttempts}回試行しても四角形のない盤面を生成できませんでした。最後の盤面を表示します。`);
   drawWalls();
   placeRobotsAndGoal();
+}
+
+/**
+ * 十字キー中央のペンギン画像を更新する
+ * @param {string} color
+ */
+function _updateDpadPenguin(color) {
+  const img = document.getElementById('dpad-penguin');
+  if (!img) return;
+  const path = getRobotImagePath(color, 'front');
+  if (path) {
+    img.src = path;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
 }
 
 // ---- キー操作 ----
