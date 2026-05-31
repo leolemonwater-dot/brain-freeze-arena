@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain Freeze Arena</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(160deg, #a8d8ea 0%, #7ec8e3 40%, #b8e4f9 100%);
+      min-height: 100vh;
+      color: #1f2937;
+      overflow-x: hidden;
+    }
+
+    /* ---- タイトル画面 ---- */
+    #title-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .title-logo-wrapper {
+      width: 100%;
+      max-width: 320px;
+      /* ロゴ画像の上下余白を削る（画像の約20%分） */
+      margin: -12% auto -8% auto;
+    }
+
+    .title-logo-wrapper img {
+      width: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .title-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .title-btn {
+      padding: 16px 24px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border: 3px solid rgba(255,255,255,0.6);
+      border-radius: 4px; /* 氷のような角ばったデザイン */
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5);
+      letter-spacing: 0.03em;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .title-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 40%;
+      background: rgba(255,255,255,0.15);
+      pointer-events: none;
+    }
+
+    .title-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+
+    .title-btn:active { transform: translateY(0); }
+
+    .title-btn.online {
+      background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+      color: #fff;
+    }
+
+    .title-btn.offline {
+      background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
+      color: #fff;
+    }
+
+    .title-btn.solo {
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+      color: #fff;
+    }
+
+    /* ---- 戻るボタン（共通） ---- */
+    .back-btn {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.9);
+      border: none;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 200;
+      transition: all 0.2s;
+    }
+    .back-btn:hover {
+      background: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      transform: scale(1.1);
+    }
+
+    /* ---- 結果画面 ---- */
+    #result-screen {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 60px 20px 40px 20px;
+      min-height: 100vh;
+    }
+
+    .result-winner-area {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .result-winner-area #result-winner {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #1f2937;
+    }
+
+    .result-score-list {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .result-row:last-child { margin-bottom: 0; }
+    .result-rank  { color: #667eea; min-width: 70px; font-size: 0.95rem; }
+    .result-name  { flex: 1; text-align: left; padding: 0 8px; }
+    .result-score { color: #374151; }
+
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .result-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.05rem;
+      box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+      transition: all 0.2s;
+    }
+
+    .result-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(102,126,234,0.5);
+    }
+
+    /* ---- ロビー画面共通 ---- */
+    .lobby-container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .lobby-logo-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 0 12px 0;
+    }
+    .lobby-logo-wrapper img {
+      max-width: 200px;
+      width: 100%;
+      object-fit: contain;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      margin-bottom: 16px;
+    }
+
+    /* ---- 名前入力画面 ---- */
+    #name-screen { text-align: center; }
+    #name-screen h3 { font-size: 1.2rem; margin-bottom: 16px; color: #374151; }
+    #name-screen input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    #name-screen input:focus { outline: none; border-color: #667eea; }
+    #name-screen .enter-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    /* ---- 待合室 ---- */
+    .lobby-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .lobby-header h3 { font-size: 1rem; color: #374151; }
+    .lobby-header-btns { display: flex; gap: 8px; }
+    .refresh-btn {
+      padding: 8px 16px;
+      background: #e5e7eb;
+      color: #374151;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .create-room-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    #create-room-form { display: none; margin-bottom: 16px; }
+    #create-room-form h4 { font-size: 1rem; margin-bottom: 12px; color: #374151; }
+    #create-room-form select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    .create-room-actions { display: flex; gap: 8px; }
+    .create-room-actions button {
+      flex: 1; padding: 10px; border: none; border-radius: 8px;
+      cursor: pointer; font-weight: 600; font-size: 0.95rem;
+    }
+    .btn-create { background: #667eea; color: #fff; }
+    .btn-cancel-room { background: #e5e7eb; color: #374151; }
+    .rooms-list {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    .room-item {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .room-info h4 { font-size: 1rem; margin-bottom: 2px; color: #1f2937; }
+    .room-info p  { font-size: 0.85rem; color: #6b7280; }
+    .room-status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .room-status-badge.waiting  { background: #d1fae5; color: #065f46; }
+    .room-status-badge.playing  { background: #fef3c7; color: #92400e; }
+    .room-status-badge.finished { background: #e5e7eb; color: #6b7280; }
+    .join-btn {
+      padding: 8px 16px;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .join-btn:disabled { background: #d1d5db; cursor: not-allowed; }
+    .empty-message { text-align: center; color: #6b7280; padding: 32px; }
+
+    /* ---- 部屋内待機 ---- */
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .room-id-label { font-size: 1.3rem; font-weight: 700; color: #667eea; }
+    .room-mode-label { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
+    .leave-btn {
+      padding: 8px 14px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .players-list h3 { font-size: 1rem; margin-bottom: 10px; color: #374151; }
+    .player-item {
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .player-name { font-weight: 600; color: #1f2937; }
+    .player-badge { padding: 3px 10px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; }
+    .badge-host    { background: #fbbf24; color: #78350f; }
+    .badge-ready   { background: #10b981; color: #fff; }
+    .badge-waiting { background: #e5e7eb; color: #6b7280; }
+    .room-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+    .ready-btn, .start-btn {
+      flex: 1; max-width: 200px; padding: 14px;
+      border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 1rem;
+    }
+    .ready-btn        { background: #10b981; color: #fff; }
+    .ready-btn.cancel { background: #6b7280; color: #fff; }
+    .start-btn        { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .start-btn:disabled { background: #d1d5db; cursor: not-allowed; }
+    .room-bottom-btns { display: flex; gap: 8px; margin-top: 12px; justify-content: center; }
+    .menu-btn {
+      padding: 8px 20px;
+      background: #e5e7eb;
+      color: #374151;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    #room-status-message {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #059669;
+      min-height: 1.4em;
+      margin-top: 8px;
+    }
+
+    /* ---- セットアップ画面 ---- */
+    #setup-screen {      display: none;
+      max-width: 480px;
+      margin: 40px auto;
+      padding: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    #setup-screen h1 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #setup-screen h2 {
+      font-size: 1.2rem;
+      text-align: center;
+      margin-bottom: 24px;
+      color: #6b7280;
+    }
+
+    .mode-buttons {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 16px 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #fff;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+    .mode-btn.selected {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+    }
+
+    .mode-btn small { display: block; font-size: 0.75rem; margin-top: 4px; opacity: 0.8; }
+
+    #player-list {
+      list-style: none;
+      margin-bottom: 16px;
+    }
+
+    #player-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    #player-list li span {
+      flex: 1;
+      padding: 10px 14px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+
+    #player-list li button {
+      padding: 8px 14px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .add-player-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .add-player-row input {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    .add-player-row input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .add-player-row button {
+      padding: 12px 20px;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #start-game-btn {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    #start-game-btn:hover { transform: translateY(-2px); }
+
+    #setup-screen p:last-child {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    #setup-screen a { color: #667eea; text-decoration: none; font-weight: 600; }
+
+    /* ---- ゲーム画面 ---- */
+    #game-screen {
+      display: none;
+      min-height: 100vh;
+      padding-bottom: 100px; /* 宣言パネル分の余白 */
+    }
+
+    /* ヘッダー */
+    .game-header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      padding: 8px 16px;
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+      border: 1px solid #fca5a5;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .back-button:hover {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    #round-info {
+      font-size: 0.85rem;
+      color: #6b7280;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    #timer {
+      font-size: 1.4rem;
+      font-weight: 800;
+      text-align: center;
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+
+    #scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .player-score {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+
+    .player-score:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .player-score.selected-player {
+      border-color: #667eea;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .player-score.declared {
+      position: relative;
+    }
+
+    .player-score.declared::after {
+      content: '✓';
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 20px;
+      height: 20px;
+      background: #10b981;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    .player-score.bounce {
+      animation: cardBounce 0.4s ease-out;
+    }
+
+    @keyframes cardBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* プレイヤーカード2行表示 */
+    .player-score {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .card-main {
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .card-status {
+      font-size: 0.75rem;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .card-status.declared  { color: #059669; }
+    .card-status.passed    { color: #9ca3af; }
+    .card-status.thinking  { color: #9ca3af; }
+
+    #status {
+      text-align: center;
+      padding: 8px 16px;
+      font-weight: 600;
+      color: #059669;
+      min-height: 1.5em;
+      animation: fadeIn 0.3s ease-in;
+    }
+
+    #current-moves {
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #1e40af;
+      padding: 8px;
+      margin: 8px 0;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #current-moves.over-limit {
+      color: #dc2626;
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 盤面 */
+    #board-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 16px 16px 16px;
+      min-height: 50vh;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-template-rows: repeat(12, 1fr);
+      gap: 0;
+      width: min(90vw, 600px);
+      height: min(90vw, 600px);
+      background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
+      border-radius: 12px;
+      box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.2),
+        inset 0 2px 10px rgba(255, 255, 255, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #board::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        repeating-linear-gradient(
+          45deg,
+          transparent,
+          transparent 10px,
+          rgba(255, 255, 255, 0.03) 10px,
+          rgba(255, 255, 255, 0.03) 20px
+        );
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .cell {
+      width: 100%;
+      height: 100%;
+      border: 0.5px solid rgba(186, 230, 253, 0.3);
+      position: relative;
+      background: linear-gradient(135deg, 
+        rgba(240, 249, 255, 0.6) 0%, 
+        rgba(224, 242, 254, 0.4) 100%);
+      backdrop-filter: blur(1px);
+    }
+
+    .cell:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .wall {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+      position: absolute;
+      z-index: 1;
+      box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .center {
+      background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .robot {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      cursor: pointer;
+      z-index: 2;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      box-shadow: none;
+      background: none !important; /* 丸の背景色を無効化 */
+      overflow: hidden;
+    }
+
+    .robot img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+      display: block;
+    }
+
+    .robot:hover {
+      transform: scale(1.1);
+    }
+
+    .robot.moving {
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    .robot.correct {
+      animation: correctBounce 0.6s ease-out;
+    }
+
+    .robot.incorrect {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes correctBounce {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-8px); }
+      75% { transform: translateX(8px); }
+    }
+
+    .selected {
+      outline: none;
+      animation: selectedGlow 1.5s infinite;
+    }
+
+    @keyframes selectedGlow {
+      0%, 100% { filter: drop-shadow(0 0 4px #fbbf24) drop-shadow(0 0 8px #f59e0b); }
+      50%       { filter: drop-shadow(0 0 8px #fbbf24) drop-shadow(0 0 16px #f59e0b); }
+    }
+
+    /* 色別オーラ */
+    .selected.aura-red {
+      animation: selectedGlowRed 1.5s infinite;
+    }
+    @keyframes selectedGlowRed {
+      0%, 100% { filter: drop-shadow(0 0 4px #ef4444) drop-shadow(0 0 8px #dc2626); }
+      50%       { filter: drop-shadow(0 0 8px #ef4444) drop-shadow(0 0 16px #dc2626); }
+    }
+
+    .selected.aura-blue {
+      animation: selectedGlowBlue 1.5s infinite;
+    }
+    @keyframes selectedGlowBlue {
+      0%, 100% { filter: drop-shadow(0 0 4px #3b82f6) drop-shadow(0 0 8px #2563eb); }
+      50%       { filter: drop-shadow(0 0 8px #3b82f6) drop-shadow(0 0 16px #2563eb); }
+    }
+
+    .selected.aura-green {
+      animation: selectedGlowGreen 1.5s infinite;
+    }
+    @keyframes selectedGlowGreen {
+      0%, 100% { filter: drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 8px #16a34a); }
+      50%       { filter: drop-shadow(0 0 8px #22c55e) drop-shadow(0 0 16px #16a34a); }
+    }
+
+    .selected.aura-yellow {
+      animation: selectedGlowYellow 1.5s infinite;
+    }
+    @keyframes selectedGlowYellow {
+      0%, 100% { filter: drop-shadow(0 0 4px #eab308) drop-shadow(0 0 8px #ca8a04); }
+      50%       { filter: drop-shadow(0 0 8px #eab308) drop-shadow(0 0 16px #ca8a04); }
+    }
+
+    /* ゴール魚のオーラ（弱め） */
+    .goalStar.aura-red    { animation: goalGlowRed    2s infinite; }
+    .goalStar.aura-blue   { animation: goalGlowBlue   2s infinite; }
+    .goalStar.aura-green  { animation: goalGlowGreen  2s infinite; }
+    .goalStar.aura-yellow { animation: goalGlowYellow 2s infinite; }
+
+    @keyframes goalGlowRed {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(239,68,68,0.6)); }
+      50%       { filter: drop-shadow(0 0 7px rgba(239,68,68,0.9)); }
+    }
+    @keyframes goalGlowBlue {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(59,130,246,0.6)); }
+      50%       { filter: drop-shadow(0 0 7px rgba(59,130,246,0.9)); }
+    }
+    @keyframes goalGlowGreen {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(34,197,94,0.6)); }
+      50%       { filter: drop-shadow(0 0 7px rgba(34,197,94,0.9)); }
+    }
+    @keyframes goalGlowYellow {
+      0%, 100% { filter: drop-shadow(0 0 3px rgba(234,179,8,0.6)); }
+      50%       { filter: drop-shadow(0 0 7px rgba(234,179,8,0.9)); }
+    }
+
+    .goalStar {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 130%;
+      height: 130%;
+      z-index: 1;
+      pointer-events: none;
+      animation: sparkle 2s infinite;
+    }
+
+    .goalStar img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    @keyframes sparkle {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.8; }
+    }
+
+    .goalStar.goal-reached {
+      animation: goalReached 0.6s ease-out;
+    }
+
+    @keyframes goalReached {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(2); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+    }
+
+    /* 正解/不正解ポップアップ */
+    #result-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      padding: 24px 48px;
+      border-radius: 16px;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      z-index: 1000;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #result-popup.show {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    #result-popup.correct {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    #result-popup.incorrect {
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    @keyframes popupBounce {
+      0% { transform: translate(-50%, -50%) scale(0); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    #result-popup.show {
+      animation: popupBounce 0.4s ease-out;
+    }
+
+    /* 宣言パネル（固定下部） */
+    #declare-panel {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      padding: 12px 16px;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+    }
+
+    #declare-panel h3 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+      text-align: center;
+      color: #374151;
+    }
+
+    .declare-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+
+    #declare-select {
+      padding: 10px 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      background: #fff;
+      min-width: 120px;
+    }
+
+    .declare-input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #declare-moves {
+      width: 70px;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .declare-input-group span {
+      font-weight: 600;
+      font-size: 1rem;
+      color: #374151;
+    }
+
+    #declare-btn {
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+      min-width: 100px;
+    }
+
+    #pass-btn {
+      padding: 10px 20px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* レスポンシブ調整 */
+    @media (max-width: 640px) {
+      #board { width: 95vw; height: 95vw; }
+      .declare-controls { flex-wrap: wrap; }
+      #declare-select, .declare-input-group, #declare-btn, #pass-btn { width: 100%; }
+      .back-button { font-size: 0.8rem; padding: 6px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ========== タイトル画面 ========== -->
+  <div id="title-screen">
+    <div class="title-logo-wrapper">
+      <img src="image/title.png" alt="Brain Freeze Arena" />
+    </div>
+    <div class="title-buttons">
+      <button class="title-btn online" onclick="goToOnlineMode()">
+        🌐 オンライン対戦
+      </button>
+      <button class="title-btn offline" onclick="goToOfflineMode()">
+        👥 オフライン対戦
+      </button>
+      <button class="title-btn solo" onclick="goToSoloMode()">
+        🎯 ソロ練習
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== 名前入力画面（オンライン） ========== -->
+  <div id="name-screen" style="display:none;">
+    <div class="lobby-container">
+      <div class="lobby-logo-wrapper">
+        <img src="image/title.png" alt="Brain Freeze Arena" />
+      </div>
+      <button class="back-btn" onclick="showScreen('title-screen')">◀</button>
+      <div class="card" style="text-align:center;">
+        <h3 style="font-size:1.2rem; margin-bottom:16px; color:#374151;">プレイヤー名を入力してください</h3>
+        <input type="text" id="online-player-name-input" placeholder="プレイヤー名（最大12文字）" maxlength="12"
+          style="width:100%; padding:12px; border:2px solid #e5e7eb; border-radius:8px; font-size:1rem; margin-bottom:16px;"
+          onkeydown="if(event.key==='Enter') enterLobby()" />
+        <button class="enter-btn" onclick="enterLobby()"
+          style="width:100%; padding:14px; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:1rem;">
+          ロビーに入る
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 待合室 ========== -->
+  <div id="lobby-screen" style="display:none;">
+    <div class="lobby-container">
+      <div class="lobby-logo-wrapper">
+        <img src="image/title.png" alt="Brain Freeze Arena" />
+      </div>
+      <button class="back-btn" onclick="showScreen('title-screen')">◀</button>
+
+      <div class="lobby-header">
+        <h3>ようこそ、<span id="player-name-display"></span>さん</h3>
+        <div class="lobby-header-btns">
+          <button class="refresh-btn" onclick="refreshRooms()">🔄 更新</button>
+          <button class="create-room-btn" onclick="toggleCreateRoomForm()">＋ 部屋を作成</button>
+        </div>
+      </div>
+
+      <div id="create-room-form">
+        <div class="card">
+          <h4>部屋を作成</h4>
+          <select id="mode-select">
+            <option value="quick">⚡ Quick Mode（5本先取）</option>
+            <option value="score">🏆 Score Mode（10ラウンド）</option>
+          </select>
+          <div class="create-room-actions">
+            <button class="btn-create" onclick="createRoom()">作成する</button>
+            <button class="btn-cancel-room" onclick="toggleCreateRoomForm()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rooms-list" id="rooms-list">
+        <div class="empty-message">🔄 更新ボタンを押して部屋を読み込んでください</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 部屋内待機 ========== -->
+  <div id="room-screen" style="display:none;">
+    <div class="lobby-container">
+      <div class="lobby-logo-wrapper">
+        <img src="image/title.png" alt="Brain Freeze Arena" />
+      </div>
+      <button class="back-btn" onclick="leaveRoom()">◀</button>
+
+      <div class="card">
+        <div class="room-header">
+          <div>
+            <div class="room-id-label">部屋ID: <span id="room-id-display"></span></div>
+            <div class="room-mode-label">モード: <span id="room-mode-display"></span></div>
+          </div>
+          <button class="leave-btn" onclick="leaveRoom()">退出</button>
+        </div>
+        <div class="players-list">
+          <h3>参加プレイヤー（<span id="player-count">0</span>/4）</h3>
+          <div id="players-container"></div>
+        </div>
+        <div class="room-actions" id="room-actions"></div>
+        <div id="room-status-message"></div>
+        <div class="room-bottom-btns">
+          <button class="menu-btn" onclick="showScreen('title-screen')">メニューへ戻る</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== セットアップ画面（オフライン） ========== -->
+  <div id="setup-screen" style="display:none;">
+    <button class="back-btn" onclick="backToTitle()">◀</button>
+    <h1>Brain Freeze Arena</h1>
+    <h2>オフライン対戦</h2>
+
+    <p style="margin-bottom:12px; font-weight:600; color:#374151;">モードを選択</p>
+    <div class="mode-buttons">
+      <button class="mode-btn selected" id="btn-quick" onclick="selectMode('quick')">
+        ⚡ Quick Mode<br><small>5本先取</small>
+      </button>
+      <button class="mode-btn" id="btn-score" onclick="selectMode('score')">
+        🏆 Score Mode<br><small>10ラウンド得点制</small>
+      </button>
+    </div>
+
+    <p style="margin-bottom:12px; font-weight:600; color:#374151;">プレイヤーを追加（2〜4人）</p>
+    <ul id="player-list"></ul>
+    <div class="add-player-row">
+      <input type="text" id="player-name-input" placeholder="プレイヤー名" maxlength="12" />
+      <button onclick="addPlayerToSetup()">追加</button>
+    </div>
+    <button id="start-game-btn" onclick="onStartGame()">ゲーム開始</button>
+  </div>
+
+  <!-- ========== ゲーム画面 ========== -->
+  <div id="game-screen" style="display:none;">
+    <div class="game-header">
+      <button class="back-button" onclick="onBackFromGame()">◀</button>
+      <div id="round-info"></div>
+      <div id="timer"></div>
+      <div id="scoreboard"></div>
+      <div id="status"></div>
+    </div>
+
+    <div id="current-moves" style="display:none;">手数: 0 / 0</div>
+
+    <div id="board-container">
+      <div id="board"></div>
+    </div>
+
+    <!-- 正解/不正解ポップアップ -->
+    <div id="result-popup"></div>
+
+    <!-- 宣言パネル（固定下部） -->
+    <div id="declare-panel" style="display:none">
+      <h3>手数を宣言する</h3>
+      <p id="selected-player-hint" style="font-size:0.85rem; color:#6b7280; margin-bottom:8px; text-align:center;">
+        👆 上のプレイヤーカードをクリックして選択してください
+      </p>
+      <div class="declare-controls">
+        <div class="declare-input-group">
+          <input type="number" id="declare-moves" min="1" max="99" value="3" />
+          <span>手</span>
+        </div>
+        <button id="declare-btn" onclick="onDeclare()">宣言</button>
+        <button id="pass-btn" onclick="handlePass()">パス</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 結果画面 ========== -->
+  <div id="result-screen" style="display:none;">
+    <button class="back-btn" onclick="goToTitle()">◀</button>
+    <div class="result-winner-area">
+      <div id="result-winner"></div>
+    </div>
+    <div id="result-score-list" class="result-score-list"></div>
+    <div class="result-actions">
+      <button id="result-btn-offline" class="result-btn" onclick="onResultOffline()">もう一度</button>
+      <button id="result-btn-online"  class="result-btn" onclick="onResultOnline()" style="display:none;">ルームへ戻る</button>
+    </div>
+  </div>
+
+  <!-- ========== 確認ダイアログ ========== -->
+  <div id="confirm-dialog-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:#fff; border-radius:16px; padding:28px 24px; max-width:320px; width:90%; text-align:center; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+      <p id="confirm-dialog-message" style="font-size:1.1rem; font-weight:600; margin-bottom:20px; color:#1f2937;"></p>
+      <div style="display:flex; gap:12px; justify-content:center;">
+        <button id="confirm-dialog-yes" style="flex:1; padding:12px; background:#ef4444; color:#fff; border:none; border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer;">YES</button>
+        <button id="confirm-dialog-no"  style="flex:1; padding:12px; background:#e5e7eb; color:#374151; border:none; border-radius:8px; font-size:1rem; font-weight:700; cursor:pointer;">NO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO クライアント（オンライン対戦用） -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- ゲームロジック（依存順に読み込む） -->
+  <script src="js/board.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/robot.js"></script>
+  <script src="js/players.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/round.js"></script>
+  <script src="js/mode.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/online.js"></script>
+  <script src="js/lobby-client.js"></script>
+  <script src="js/game.js"></script>
+
+  <script>
+    // ---- 現在のゲームタイプ ----
+    let currentGameType = 'offline'; // 'offline' | 'online' | 'solo'
+
+    // ---- 画面遷移 ----
+    function goToOnlineMode() {
+      showScreen('name-screen');
+    }
+
+    function goToOfflineMode() {
+      currentGameType = 'offline';
+      showScreen('setup-screen');
+      // 前回のプレイヤーを復元
+      renderSetupPlayers();
+    }
+
+    function goToSoloMode() {
+      currentGameType = 'solo';
+      showScreen('game-screen');
+      document.getElementById('declare-panel').style.display = 'none';
+      generateBoard();
+    }
+
+    function goToTitle() {
+      showScreen('title-screen');
+    }
+
+    function backToTitle() {
+      showScreen('title-screen');
+    }
+
+    // ---- ゲーム画面の◀ボタン ----
+    function onBackFromGame() {
+      if (currentGameType === 'offline') {
+        showConfirmDialog('ゲームを終了しますか？', () => {
+          stopTimer();
+          showScreen('setup-screen');
+        });
+      } else if (currentGameType === 'online') {
+        showConfirmDialog('リタイアしますか？', () => {
+          stopTimer();
+          // オンライン: リタイア処理（online.jsで実装）
+          if (typeof sendRetireOnline === 'function') sendRetireOnline();
+          showScreen('title-screen');
+        });
+      } else {
+        // ソロ練習
+        showConfirmDialog('ゲームを終了しますか？', () => {
+          stopTimer();
+          showScreen('title-screen');
+        });
+      }
+    }
+
+    // ---- 結果画面のボタン ----
+    function onResultOffline() {
+      showScreen('setup-screen');
+      renderSetupPlayers(); // 前回のプレイヤーを保持
+    }
+
+    function onResultOnline() {
+      // オンライン: 部屋に戻る（online.jsで実装）
+      if (typeof returnToRoomOnline === 'function') returnToRoomOnline();
+    }
+
+    // ---- セットアップ画面のUI制御 ----
+    let selectedMode = 'quick';
+    let setupPlayers = []; // { name: string }[]
+
+    function selectMode(mode) {
+      selectedMode = mode;
+      document.getElementById('btn-quick').classList.toggle('selected', mode === 'quick');
+      document.getElementById('btn-score').classList.toggle('selected', mode === 'score');
+    }
+
+    function addPlayerToSetup() {
+      const input = document.getElementById('player-name-input');
+      const name  = input.value.trim();
+      if (!name) return;
+      if (setupPlayers.length >= 4) { alert('最大4人まで登録できます'); return; }
+      if (setupPlayers.some(p => p.name === name)) { alert('同じ名前は登録できません'); return; }
+      setupPlayers.push({ name });
+      input.value = '';
+      renderSetupPlayers();
+    }
+
+    function removeSetupPlayer(index) {
+      setupPlayers.splice(index, 1);
+      renderSetupPlayers();
+    }
+
+    function renderSetupPlayers() {
+      const list = document.getElementById('player-list');
+      list.innerHTML = setupPlayers.map((p, i) =>
+        `<li><span>${p.name}</span><button onclick="removeSetupPlayer(${i})">削除</button></li>`
+      ).join('');
+    }
+
+    function onStartGame() {
+      if (setupPlayers.length < 2) { alert('プレイヤーを2人以上追加してください'); return; }
+      showScreen('game-screen');
+      document.getElementById('declare-panel').style.display = 'block';
+      startGame(selectedMode, setupPlayers.map(p => p.name));
+      // 初期プレイヤー選択
+      const players = getPlayers();
+      if (players.length > 0) selectPlayer(players[0].id);
+    }
+
+    // Enterキーで名前追加
+    document.getElementById('player-name-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') addPlayerToSetup();
+    });
+
+    // ---- 初期画面の判定 ----
+    window.addEventListener('DOMContentLoaded', () => {
+      showScreen('title-screen');
+    });
+  </script>
+</body>
+</html>

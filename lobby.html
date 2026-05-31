@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brain Freeze Arena - オンライン対戦</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* ---- ロゴ ---- */
+    .lobby-logo-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 0 12px 0;
+    }
+    .lobby-logo-wrapper img {
+      max-width: 200px;
+      width: 100%;
+      object-fit: contain;
+    }
+
+    /* ---- 戻るボタン ---- */
+    .back-btn {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      width: 40px;
+      height: 40px;
+      background: rgba(255,255,255,0.9);
+      border: none;
+      border-radius: 50%;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 100;
+    }
+
+    /* ---- カード共通 ---- */
+    .card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      margin-bottom: 16px;
+    }
+
+    /* ---- 名前入力画面 ---- */
+    #name-screen { text-align: center; }
+    #name-screen h3 {
+      font-size: 1.2rem;
+      margin-bottom: 16px;
+      color: #374151;
+    }
+    #name-screen input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    #name-screen input:focus { outline: none; border-color: #667eea; }
+    #name-screen button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    /* ---- 待合室 ---- */
+    #lobby-screen { display: none; }
+    .lobby-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .lobby-header h3 { font-size: 1rem; color: #374151; }
+    .lobby-header-btns { display: flex; gap: 8px; }
+    .refresh-btn {
+      padding: 8px 16px;
+      background: #e5e7eb;
+      color: #374151;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .create-room-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    /* ---- 部屋作成フォーム ---- */
+    #create-room-form { display: none; margin-bottom: 16px; }
+    #create-room-form .card { margin-bottom: 0; }
+    #create-room-form h4 { font-size: 1rem; margin-bottom: 12px; color: #374151; }
+    #create-room-form select {
+      width: 100%;
+      padding: 10px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    .create-room-actions { display: flex; gap: 8px; }
+    .create-room-actions button {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .btn-create { background: #667eea; color: #fff; }
+    .btn-cancel { background: #e5e7eb; color: #374151; }
+
+    /* ---- 部屋リスト ---- */
+    .rooms-list {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+    .room-item {
+      background: #f3f4f6;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .room-info h4 { font-size: 1rem; margin-bottom: 2px; color: #1f2937; }
+    .room-info p  { font-size: 0.85rem; color: #6b7280; }
+    .room-status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .room-status-badge.waiting  { background: #d1fae5; color: #065f46; }
+    .room-status-badge.playing  { background: #fef3c7; color: #92400e; }
+    .room-status-badge.finished { background: #e5e7eb; color: #6b7280; }
+    .join-btn {
+      padding: 8px 16px;
+      background: #667eea;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+    .join-btn:disabled { background: #d1d5db; cursor: not-allowed; }
+    .empty-message { text-align: center; color: #6b7280; padding: 32px; }
+
+    /* ---- 部屋内待機 ---- */
+    #room-screen { display: none; }
+    .room-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .room-id-label { font-size: 1.3rem; font-weight: 700; color: #667eea; }
+    .room-mode-label { font-size: 0.85rem; color: #6b7280; margin-top: 2px; }
+    .leave-btn {
+      padding: 8px 14px;
+      background: #ef4444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+    .players-list h3 { font-size: 1rem; margin-bottom: 10px; color: #374151; }
+    .player-item {
+      background: #f3f4f6;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .player-name { font-weight: 600; color: #1f2937; }
+    .player-badge {
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-host    { background: #fbbf24; color: #78350f; }
+    .badge-ready   { background: #10b981; color: #fff; }
+    .badge-waiting { background: #e5e7eb; color: #6b7280; }
+    .room-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+    .ready-btn, .start-btn {
+      flex: 1;
+      max-width: 200px;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .ready-btn        { background: #10b981; color: #fff; }
+    .ready-btn.cancel { background: #6b7280; color: #fff; }
+    .start-btn        { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .start-btn:disabled { background: #d1d5db; cursor: not-allowed; }
+    .room-bottom-btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: center;
+    }
+    .menu-btn {
+      padding: 8px 20px;
+      background: #e5e7eb;
+      color: #374151;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    #room-status-message {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #059669;
+      min-height: 1.4em;
+      margin-top: 8px;
+    }
+
+    /* ---- 結果画面 ---- */
+    #result-screen-lobby { display: none; text-align: center; }
+    .result-winner-area {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #1f2937;
+      margin-bottom: 16px;
+      padding: 16px;
+    }
+    .result-score-list { margin-bottom: 20px; }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .result-rank  { color: #667eea; min-width: 60px; }
+    .result-name  { flex: 1; text-align: left; padding: 0 8px; }
+    .result-score { color: #374151; }
+    .result-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    @media (max-width: 640px) {
+      .room-item { flex-direction: column; align-items: flex-start; }
+      .join-btn  { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lobby-logo-wrapper">
+      <img src="image/title.png" alt="Brain Freeze Arena" />
+    </div>
+
+    <!-- ========== 名前入力画面 ========== -->
+    <div id="name-screen" class="card">
+      <button class="back-btn" onclick="goToTitle()" title="タイトルへ戻る">◀</button>
+      <h3>プレイヤー名を入力してください</h3>
+      <input type="text" id="player-name-input" placeholder="プレイヤー名（最大12文字）" maxlength="12" />
+      <button onclick="enterLobby()">ロビーに入る</button>
+    </div>
+
+    <!-- ========== 待合室 ========== -->
+    <div id="lobby-screen">
+      <button class="back-btn" onclick="goToTitle()" title="タイトルへ戻る">◀</button>
+
+      <div class="lobby-header">
+        <h3>ようこそ、<span id="player-name-display"></span>さん</h3>
+        <div class="lobby-header-btns">
+          <button class="refresh-btn" onclick="refreshRooms()">🔄 更新</button>
+          <button class="create-room-btn" onclick="toggleCreateRoomForm()">＋ 部屋を作成</button>
+        </div>
+      </div>
+
+      <!-- 部屋作成フォーム（インライン） -->
+      <div id="create-room-form">
+        <div class="card">
+          <h4>部屋を作成</h4>
+          <select id="mode-select">
+            <option value="quick">⚡ Quick Mode（5本先取）</option>
+            <option value="score">🏆 Score Mode（10ラウンド）</option>
+          </select>
+          <div class="create-room-actions">
+            <button class="btn-create" onclick="createRoom()">作成する</button>
+            <button class="btn-cancel" onclick="toggleCreateRoomForm()">キャンセル</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 部屋リスト -->
+      <div class="rooms-list" id="rooms-list">
+        <div class="empty-message">🔄 更新ボタンを押して部屋を読み込んでください</div>
+      </div>
+    </div>
+
+    <!-- ========== 部屋内待機 ========== -->
+    <div id="room-screen">
+      <button class="back-btn" onclick="leaveRoom()" title="待合室へ戻る">◀</button>
+
+      <div class="card">
+        <div class="room-header">
+          <div>
+            <div class="room-id-label">部屋ID: <span id="room-id-display"></span></div>
+            <div class="room-mode-label">モード: <span id="room-mode-display"></span></div>
+          </div>
+          <button class="leave-btn" onclick="leaveRoom()">退出</button>
+        </div>
+
+        <div class="players-list">
+          <h3>参加プレイヤー（<span id="player-count">0</span>/4）</h3>
+          <div id="players-container"></div>
+        </div>
+
+        <div class="room-actions" id="room-actions"></div>
+
+        <div id="room-status-message"></div>
+
+        <div class="room-bottom-btns">
+          <button class="menu-btn" onclick="goToTitle()">メニューへ戻る</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 結果画面（オンライン） ========== -->
+    <div id="result-screen-lobby">
+      <button class="back-btn" onclick="goToTitle()" title="タイトルへ戻る">◀</button>
+
+      <div class="card">
+        <div class="result-winner-area" id="result-winner-lobby"></div>
+        <div class="result-score-list" id="result-score-list-lobby"></div>
+        <button class="result-btn" onclick="returnToRoomFromResult()">ルームへ戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO クライアント -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/lobby-client.js"></script>
+
+  <script>
+    /** 部屋作成フォームの表示/非表示を切り替える */
+    function toggleCreateRoomForm() {
+      const form = document.getElementById('create-room-form');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    /** 結果画面からルームへ戻る */
+    function returnToRoomFromResult() {
+      if (currentRoomId) {
+        socket.emit('returnToRoom', { roomId: currentRoomId });
+        showLobbyScreen('room-screen');
+      }
+    }
+  </script>
+</body>
+</html>

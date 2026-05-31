@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Hyper Robot Board</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; }
+    #board { display: grid; grid-template-columns: repeat(16, 30px); grid-template-rows: repeat(16, 30px); margin: 20px auto; position: relative; }
+    .cell { width: 30px; height: 30px; box-sizing: border-box; border: 1px solid #ddd; position: relative; }
+    .wall { background: #333; position: absolute; }
+    .center { background: #bbb; }
+    .robot { width: 70%; height: 70%; border-radius: 50%; margin: auto; position: absolute; top: 15%; left: 15%; cursor: pointer; z-index: 2; }
+    .selected { outline: 3px solid gold; }
+    .goalStar { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 22px; line-height: 1; z-index: 1; pointer-events: none; }
+    details { width: 700px; margin: 8px auto; text-align: left; }
+    #testlog { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; }
+    #status { min-height: 1.2em; font-weight: bold; color: #15803d; }
+    .toolbar { display:flex; gap:8px; justify-content:center; align-items:center; }
+  </style>
+</head>
+<body>
+  <h1>Hyper Robot Board</h1>
+  <div id="board"></div>
+  <div class="toolbar">
+    <p>手数: <span id="moves">0</span></p>
+    <button onclick="resetRobotsToInitial()">リセット</button>
+    <button onclick="regenerateGoalAndReset()">新しいゴール</button>
+    <button onclick="generateBoard()">盤面を再生成</button>
+  </div>
+  <p id="status"></p>
+  <details open><summary>Self Tests</summary><pre id="testlog"></pre></details>
+
+  <script>
+    const SIZE = 16;
+    const boardEl = document.getElementById("board");
+    const testLogEl = document.getElementById('testlog');
+    const statusEl = document.getElementById('status');
+
+    let walls = [];
+    let robots = [];
+    let selectedRobot = null;
+    let moves = 0;
+    let goal = null;
+    let goalColor = null;
+    let lCorners = []; // L字の角セル保存（検証用）
+    const colors = ["red","blue","green","yellow"];
+
+    function logTest(name, pass, info=''){
+      const mark = pass ? '✅' : '❌';
+      testLogEl.textContent += `${mark} ${name}${info ? ' — '+info : ''}\n`;
+      if (!pass && info) console.warn(`[TEST FAIL] ${name}: ${info}`);
+    }
+    function clearTests(){ testLogEl.textContent = ''; }
+    function setStatus(txt=''){ statusEl.textContent = txt; }
+
+    // ---- 壁フラグを双方向に立てるユーティリティ ----
+    function setWallBi(x,y,dir,val=true){
+      if (x<0||x>=SIZE||y<0||y>=SIZE) return;
+      const opp = {top:'bottom', right:'left', bottom:'top', left:'right'}[dir];
+      walls[y][x][dir] = val;
+      let nx=x, ny=y;
+      if (dir==='right') nx = x+1; else if (dir==='left') nx = x-1;
+      else if (dir==='bottom') ny = y+1; else if (dir==='top') ny = y-1;
+      if (nx>=0 && nx<SIZE && ny>=0 && ny<SIZE) {
+        walls[ny][nx][opp] = val;
+      }
+    }
+
+    const isCenter = (x,y)=> (x>=7 && x<=8 && y>=7 && y<=8);
+
+    function generateEmptyBoard() {
+      walls = [];
+      boardEl.innerHTML = "";
+      for (let y = 0; y < SIZE; y++) {
+        walls[y] = [];
+        for (let x = 0; x < SIZE; x++) {
+          walls[y][x] = { top:false, right:false, bottom:false, left:false, blocked:false };
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          boardEl.appendChild(cell);
+        }
+      }
+      // 外周の枠（盤外なので双方向同期は不要）
+      for (let i = 0; i < SIZE; i++) {
+        walls[0][i].top = true;
+        walls[SIZE-1][i].bottom = true;
+        walls[i][0].left = true;
+        walls[i][SIZE-1].right = true;
+      }
+    }
+
+    function drawWalls() {
+      document.querySelectorAll(".wall").forEach(w => w.remove());
+      // 中央2×2の見た目
+      for (let y=7; y<=8; y++){
+        for (let x=7; x<=8; x++){
+          const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
+          if (cell) cell.classList.add('center');
+        }
+      }
+      const cells = document.querySelectorAll(".cell");
+      cells.forEach(cell => {
+        const x = parseInt(cell.dataset.x);
+        const y = parseInt(cell.dataset.y);
+        const w = walls[y][x];
+        if (w.top) {
+          const wall = document.createElement("div");
+          wall.className = "wall";
+          wall.style.top = "0";
+          wall.style.left = "0";
+          wall.style.width = "100%";
+          wall.style.height = "3px";
+          cell.appendChild(wall);
+        }
+        if (w.right) {
+          const wall = document.createElement("div");
+          wall.className = "wall";
+          wall.style.top = "0";
+          wall.style.right = "0";
+          wall.style.width = "3px";
+          wall.style.height = "100%";
+          cell.appendChild(wall);
+        }
+        if (w.bottom) {
+          const wall = document.createElement("div");
+          wall.className = "wall";
+          wall.style.bottom = "0";
+          wall.style.left = "0";
+          wall.style.width = "100%";
+          wall.style.height = "3px";
+          cell.appendChild(wall);
+        }
+        if (w.left) {
+          const wall = document.createElement("div");
+          wall.className = "wall";
+          wall.style.top = "0";
+          wall.style.left = "0";
+          wall.style.width = "3px";
+          wall.style.height = "100%";
+          cell.appendChild(wall);
+        }
+      });
+    }
+
+    function placeLAndIWalls() {
+      // -------- 中央2×2ブロック（進入禁止 + 見た目） --------
+      for (let y=7; y<=8; y++){
+        for (let x=7; x<=8; x++){
+          const w = walls[y][x];
+          w.blocked = true;                    // 進入禁止
+          setWallBi(x,y,'top',true);
+          setWallBi(x,y,'right',true);
+          setWallBi(x,y,'bottom',true);
+          setWallBi(x,y,'left',true);
+        }
+      }
+
+      // -------- L字壁 16個（孤立・中央近傍回避） --------
+      lCorners = [];
+      const used = new Set();
+      const nearCenter = (x,y)=> (x>=6 && x<=9 && y>=6 && y<=9); // 中央2×2 + 1セルバッファ
+      const key = (x,y)=> `${x},${y}`;
+      const nearUsed = (x,y)=>{
+        for (let dy=-1; dy<=1; dy++){
+          for (let dx=-1; dx<=1; dx++){
+            if (dx===0 && dy===0) continue;
+            if (used.has(key(x+dx,y+dy))) return true; // 8近傍に既存Lがあれば不可（斜め含む）
+          }
+        }
+        return false;
+      };
+
+      function addL(x,y,dirA,dirB){
+        setWallBi(x,y,dirA,true);
+        setWallBi(x,y,dirB,true);
+      }
+
+      // 候補セルをシャッフル
+      const candidates = [];
+      for (let y=1; y<SIZE-1; y++){
+        for (let x=1; x<SIZE-1; x++){
+          if (nearCenter(x,y)) continue; // 中央近傍除外
+          candidates.push([x,y]);
+        }
+      }
+      for (let i=candidates.length-1; i>0; i--){
+        const j = Math.floor(Math.random()*(i+1));
+        const t = candidates[i]; candidates[i]=candidates[j]; candidates[j]=t;
+      }
+
+      let placed = 0;
+      for (const [x,y] of candidates){
+        if (placed>=16) break;
+        if (nearUsed(x,y)) continue;
+        const rots = [ ['top','left'], ['top','right'], ['bottom','left'], ['bottom','right'] ];
+        const r = rots[Math.floor(Math.random()*rots.length)];
+        addL(x,y,r[0],r[1]);
+        used.add(key(x,y));
+        lCorners.push({x,y,dirs:r});
+        placed++;
+      }
+
+      // -------- 外周I字壁（既存仕様：T字に内向き1セル、2本ずつ/2マス以上離す） --------
+      function placeIOnEdge(edge) {
+        let positions = [];
+        while (positions.length < 2) {
+          let pos = Math.floor(Math.random()*(SIZE-2))+1; // 1..SIZE-2（角は避ける）
+          if (positions.every(p=>Math.abs(p-pos)>=3)) positions.push(pos); // 2マス以上離す
+        }
+        positions.forEach(pos => {
+          if (edge === "top") {
+            setWallBi(pos,0,'right',true);           // (0,pos)-(0,pos+1) の縦壁（1セル分）
+          } else if (edge === "bottom") {
+            setWallBi(pos,SIZE-1,'right',true);      // (SIZE-1,pos)-(SIZE-1,pos+1)
+          } else if (edge === "left") {
+            setWallBi(0,pos,'bottom',true);          // (pos,0)-(pos+1,0)
+          } else if (edge === "right") {
+            setWallBi(SIZE-1,pos,'bottom',true);     // (pos,SIZE-1)-(pos+1,SIZE-1)
+          }
+        });
+      }
+      ["top","bottom","left","right"].forEach(placeIOnEdge);
+    }
+
+    function placeGoalOnly() {
+      // 既存ゴールの除去
+      document.querySelectorAll('.goalStar').forEach(e=>e.remove());
+      // L字の内側候補（中央2×2は除外）
+      const candidates = [];
+      for (let y=1;y<SIZE-1;y++) {
+        for (let x=1;x<SIZE-1;x++) {
+          if (isCenter(x,y)) continue; // 追加: 中央除外
+          let w = walls[y][x];
+          if (w.top && w.left) candidates.push({x,y});
+          if (w.bottom && w.right) candidates.push({x,y});
+        }
+      }
+      if (candidates.length === 0) {
+        console.warn('No L-inner candidates. Fallback goal used (non-center).');
+        // 非センターの安全位置
+        candidates.push({x: Math.floor(SIZE/2), y: Math.floor(SIZE/2)-2});
+      }
+      goal = candidates[Math.floor(Math.random()*candidates.length)];
+      goalColor = colors[Math.floor(Math.random()*colors.length)];
+      const goalCell = document.querySelector(`.cell[data-x='${goal.x}'][data-y='${goal.y}']`);
+      const g = document.createElement("div");
+      g.className = "goalStar";
+      g.style.color = goalColor;
+      g.textContent = '★';
+      goalCell.appendChild(g);
+      setStatus('');
+    }
+
+    function placeRobotsAndGoal() {
+      robots = [];
+      selectedRobot = null;
+      document.querySelectorAll(".robot").forEach(e=>e.remove());
+      placeGoalOnly();
+
+      // ロボット配置（ゴールと中央2×2は不可）
+      colors.forEach(color => {
+        let x,y;
+        do {
+          x = Math.floor(Math.random()*SIZE);
+          y = Math.floor(Math.random()*SIZE);
+        } while ((x===goal.x && y===goal.y) || isCenter(x,y));
+        const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
+        const r = document.createElement("div");
+        r.className = "robot";
+        r.style.background = color;
+        r.dataset.x = x;
+        r.dataset.y = y;
+        r.dataset.initX = x;
+        r.dataset.initY = y;
+        r.dataset.color = color;
+        r.onclick = ()=>{
+          document.querySelectorAll(".robot").forEach(ro=>ro.classList.remove("selected"));
+          r.classList.add("selected");
+          selectedRobot = r;
+        };
+        cell.appendChild(r);
+        robots.push(r);
+      });
+    }
+
+    function resetRobotsToInitial(){
+      robots.forEach(r=>{
+        const x = parseInt(r.dataset.initX), y = parseInt(r.dataset.initY);
+        r.dataset.x = x; r.dataset.y = y;
+        const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
+        cell.appendChild(r);
+        r.classList.remove('selected');
+      });
+      selectedRobot = null;
+      moves = 0;
+      document.getElementById("moves").textContent = moves;
+      setStatus('');
+    }
+
+    function regenerateGoalAndReset(){
+      resetRobotsToInitial();
+      placeGoalOnly();
+      // ゴールのみ更新なので壁は触らない
+    }
+
+    function moveSelectedRobot(dx,dy) {
+      if (!selectedRobot) return;
+      let x = parseInt(selectedRobot.dataset.x);
+      let y = parseInt(selectedRobot.dataset.y);
+      while (true) {
+        let nx = x+dx, ny = y+dy;
+        // 盤外 or 次セルが進入禁止
+        if (nx<0||nx>=SIZE||ny<0||ny>=SIZE) break;
+        if (walls[ny][nx].blocked) break;
+        // 壁（双方向チェック）
+        const cur = walls[y][x];
+        const nxt = walls[ny][nx];
+        if (dx===1 && (cur.right || nxt.left)) break;
+        if (dx===-1 && (cur.left  || nxt.right)) break;
+        if (dy===1 && (cur.bottom|| nxt.top)) break;
+        if (dy===-1 && (cur.top   || nxt.bottom)) break;
+        // 他ロボット
+        if (robots.some(r=>parseInt(r.dataset.x)===nx && parseInt(r.dataset.y)===ny)) break;
+        // 1歩進む
+        x=nx; y=ny;
+      }
+      selectedRobot.dataset.x = x;
+      selectedRobot.dataset.y = y;
+      const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
+      cell.appendChild(selectedRobot);
+      moves++;
+      document.getElementById("moves").textContent = moves;
+
+      // クリア判定：同色で座標一致
+      if (goal && x===goal.x && y===goal.y && selectedRobot.dataset.color === goalColor){
+        setStatus('クリア！');
+      } else {
+        setStatus('');
+      }
+    }
+
+    // ★★★ 重複していた上側の keydown リスナーは削除しました ★★★
+
+    // ---- Tests ----
+    function runTests(){
+      clearTests();
+      // 1) 各辺にI字が2本、2マス以上離れている
+      const topXs = []; const bottomXs = []; const leftYs = []; const rightYs = [];
+      for (let x=1; x<SIZE-1; x++){
+        if (walls[0][x].right && walls[0][x+1]?.left) topXs.push(x);
+        if (walls[SIZE-1][x].right && walls[SIZE-1][x+1]?.left) bottomXs.push(x);
+      }
+      for (let y=1; y<SIZE-1; y++){
+        if (walls[y][0].bottom && walls[y+1]?.[0]?.top) leftYs.push(y);
+        if (walls[y][SIZE-1].bottom && walls[y+1]?.[SIZE-1]?.top) rightYs.push(y);
+      }
+      const spacingOK = (arr)=> arr.length===2 && Math.abs(arr[1]-arr[0])>=3;
+      logTest('Top I-walls count=2 & spacing>=2', spacingOK(topXs), `pos=${topXs}`);
+      logTest('Bottom I-walls count=2 & spacing>=2', spacingOK(bottomXs), `pos=${bottomXs}`);
+      logTest('Left I-walls count=2 & spacing>=2', spacingOK(leftYs), `pos=${leftYs}`);
+      logTest('Right I-walls count=2 & spacing>=2', spacingOK(rightYs), `pos=${rightYs}`);
+
+      // 2) 中央2×2が完全封鎖 & ロボット/ゴールが乗っていない
+      let centerOK = true, centerFree = true, goalNotCenter = true;
+      for (let y=7; y<=8; y++){
+        for (let x=7; x<=8; x++){
+          const w = walls[y][x];
+          if (!(w.top && w.right && w.bottom && w.left) || !w.blocked) centerOK=false;
+          if (robots.some(r=> Number(r.dataset.x)===x && Number(r.dataset.y)===y)) centerFree=false;
+          if (goal && goal.x===x && goal.y===y) goalNotCenter=false;
+        }
+      }
+      logTest('Center 2x2 fully walled & blocked', centerOK);
+      logTest('No robots on center 2x2', centerFree);
+      logTest('Goal not in center 2x2', goalNotCenter);
+
+      // 3) L字が16個かつ互いに8近傍で接触していない（斜め含む）
+      const countOK = lCorners.length === 16;
+      let isolationOK = true;
+      for (let i=0;i<lCorners.length;i++){
+        const a = lCorners[i];
+        if (a.x>=6 && a.x<=9 && a.y>=6 && a.y<=9) isolationOK=false; // 中央近傍禁止
+        for (let j=i+1;j<lCorners.length;j++){
+          const b = lCorners[j];
+          const dx = Math.abs(a.x-b.x), dy = Math.abs(a.y-b.y);
+          if (Math.max(dx,dy) <= 1) isolationOK=false; // 8近傍接触
+        }
+      }
+      logTest('L-corners count=16', countOK, `count=${lCorners.length}`);
+      logTest('L-corners no contact (incl. diagonal)', isolationOK);
+
+      // 4) 壁の双方向整合性
+      let symmetric = true;
+      for (let y=0; y<SIZE; y++){
+        for (let x=0; x<SIZE; x++){
+          const w = walls[y][x];
+          if (x<SIZE-1 && w.right && !walls[y][x+1].left) symmetric=false;
+          if (x>0      && w.left  && !walls[y][x-1].right) symmetric=false;
+          if (y<SIZE-1 && w.bottom&& !walls[y+1][x].top) symmetric=false;
+          if (y>0      && w.top   && !walls[y-1][x].bottom) symmetric=false;
+        }
+      }
+      logTest('Wall flags are bidirectionally consistent', symmetric);
+
+      // 5) ゴール配置 & ロボット重複なし
+      const goalExists = !!goal && Number.isInteger(goal.x) && Number.isInteger(goal.y);
+      logTest('Goal placed on board', goalExists, goalExists?`(${goal.x},${goal.y})`: 'not set');
+      const overlap = robots.some(r=> Number(r.dataset.x)===goal.x && Number(r.dataset.y)===goal.y);
+      logTest('Robots not on goal cell', !overlap);
+    }
+
+    function generateBoard() {
+      setStatus('');
+      moves = 0;
+      document.getElementById("moves").textContent = moves;
+      generateEmptyBoard();
+      placeLAndIWalls();
+      drawWalls();
+      placeRobotsAndGoal();
+      runTests();
+    }
+
+    // 初期化
+    generateBoard();
+
+    // キー操作（←これだけ残す）
+    document.addEventListener("keydown", e=>{
+      if (e.key==="ArrowUp") moveSelectedRobot(0,-1);
+      if (e.key==="ArrowDown") moveSelectedRobot(0,1);
+      if (e.key==="ArrowLeft") moveSelectedRobot(-1,0);
+      if (e.key==="ArrowRight") moveSelectedRobot(1,0);
+    });
+  </script>
+</body>
+</html>
