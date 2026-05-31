@@ -1379,6 +1379,9 @@
       document.getElementById('declare-panel').style.display = 'block';
       // ソロモード用ボタンを表示
       document.getElementById('solo-buttons').style.display = 'flex';
+      // ヒントテキストを非表示
+      const hint = document.getElementById('selected-player-hint');
+      if (hint) hint.style.display = 'none';
       generateBoard();
     }
 
@@ -1465,6 +1468,9 @@
       onlineModeActive = false;
       // ソロボタンを非表示
       document.getElementById('solo-buttons').style.display = 'none';
+      // ヒントテキストを再表示
+      const hint = document.getElementById('selected-player-hint');
+      if (hint) hint.style.display = 'block';
       showScreen('game-screen');
       document.getElementById('declare-panel').style.display = 'block';
       startGame(selectedMode, setupPlayers.map(p => p.name));
