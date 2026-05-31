@@ -25,14 +25,15 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 16px;
+      gap: 12px;
     }
 
     .title-logo-wrapper {
       width: 100%;
-      max-width: 320px;
-      /* ロゴ画像の上下余白を削る（画像の約20%分） */
-      margin: -12% auto -8% auto;
+      max-width: 260px;
+      margin: 0 auto;
+      flex-shrink: 1;
     }
 
     .title-logo-wrapper img {
@@ -44,9 +45,10 @@
     .title-buttons {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
       max-width: 320px;
+      flex-shrink: 0;
     }
 
     .title-btn {
@@ -546,22 +548,22 @@
     /* ヘッダー */
     .game-header {
       background: rgba(255, 255, 255, 0.95);
-      padding: 12px 16px;
+      padding: 6px 12px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
       position: relative;
     }
 
     .back-button {
       position: absolute;
-      top: 12px;
-      left: 16px;
-      padding: 8px 16px;
+      top: 6px;
+      left: 12px;
+      padding: 4px 10px;
       background: rgba(239, 68, 68, 0.1);
       color: #dc2626;
       border: 1px solid #fca5a5;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: 600;
       transition: all 0.2s;
     }
@@ -572,32 +574,32 @@
     }
 
     #round-info {
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       color: #6b7280;
       text-align: center;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     #timer {
-      font-size: 1.4rem;
+      font-size: 1.1rem;
       font-weight: 800;
       text-align: center;
       color: #667eea;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     #scoreboard {
       display: flex;
       justify-content: center;
-      gap: 12px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
     .player-score {
-      padding: 8px 16px;
+      padding: 4px 10px;
       background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-      border-radius: 20px;
-      font-size: 0.9rem;
+      border-radius: 16px;
+      font-size: 0.8rem;
       font-weight: 600;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
       cursor: pointer;
@@ -667,10 +669,11 @@
 
     #status {
       text-align: center;
-      padding: 8px 16px;
+      padding: 4px 8px;
       font-weight: 600;
       color: #059669;
-      min-height: 1.5em;
+      min-height: 1.2em;
+      font-size: 0.85rem;
       animation: fadeIn 0.3s ease-in;
     }
 
