@@ -407,6 +407,11 @@ function onPhaseChange(phase, data) {
     setStatus('思考中... 手数を宣言してください');
     if (!isOnlineMode()) updateSelectedPlayerHint();
     _updateDeclarePanel();
+    // 方向ボタンを非表示、宣言パネルを再表示
+    const dirBtnsThink = document.getElementById('direction-buttons');
+    if (dirBtnsThink) dirBtnsThink.classList.remove('visible');
+    const declarePanelThink = document.getElementById('declare-panel');
+    if (declarePanelThink && getPlayers().length > 0) declarePanelThink.style.display = 'block';
   } else if (phase === 'thinking_tick') {
     if (timerEl) {
       timerEl.textContent = `思考中... 残り ${data}秒`;
@@ -436,6 +441,11 @@ function onPhaseChange(phase, data) {
       updateScoreboard();
     }
     _updateDeclarePanel();
+    // 解答フェーズ中は方向ボタンを表示、宣言パネルを非表示
+    const dirBtns = document.getElementById('direction-buttons');
+    if (dirBtns) dirBtns.classList.add('visible');
+    const declarePanel = document.getElementById('declare-panel');
+    if (declarePanel) declarePanel.style.display = 'none';
   } else if (phase === 'answering_tick') {
     // オンライン解答フェーズのタイマー
     if (timerEl) {
@@ -452,6 +462,11 @@ function onPhaseChange(phase, data) {
     }
     updateScoreboard();
     if (currentMovesEl) currentMovesEl.style.display = 'none';
+    // 方向ボタンを非表示、宣言パネルを再表示
+    const dirBtnsRound = document.getElementById('direction-buttons');
+    if (dirBtnsRound) dirBtnsRound.classList.remove('visible');
+    const declarePanelRound = document.getElementById('declare-panel');
+    if (declarePanelRound && getPlayers().length > 0) declarePanelRound.style.display = 'block';
     // オフラインのみ自動で次のラウンドへ（オンラインはサーバーが制御）
     if (!isOnlineMode()) {
       setTimeout(() => nextRound(onPhaseChange), 3000);

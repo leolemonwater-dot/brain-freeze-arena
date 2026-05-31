@@ -963,7 +963,38 @@
       animation: popupBounce 0.4s ease-out;
     }
 
-    /* 宣言パネル（固定下部） */
+    /* 方向ボタン */
+    #direction-buttons {
+      display: none;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px 0 16px;
+    }
+
+    #direction-buttons.visible {
+      display: flex;
+    }
+
+    .dir-btn {
+      flex: 1;
+      max-width: 72px;
+      padding: 12px 0;
+      font-size: 1.3rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(102,126,234,0.4);
+      transition: all 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .dir-btn:active {
+      transform: scale(0.93);
+      box-shadow: 0 1px 4px rgba(102,126,234,0.3);
+    }
     #declare-panel {
       position: fixed;
       bottom: 0;
@@ -1199,6 +1230,14 @@
 
     <!-- 正解/不正解ポップアップ -->
     <div id="result-popup"></div>
+
+    <!-- 方向ボタン（スマホ用） -->
+    <div id="direction-buttons">
+      <button class="dir-btn" ontouchstart="moveSelectedRobot(-1,0)" onclick="moveSelectedRobot(-1,0)">←</button>
+      <button class="dir-btn" ontouchstart="moveSelectedRobot(0,-1)" onclick="moveSelectedRobot(0,-1)">↑</button>
+      <button class="dir-btn" ontouchstart="moveSelectedRobot(0,1)"  onclick="moveSelectedRobot(0,1)">↓</button>
+      <button class="dir-btn" ontouchstart="moveSelectedRobot(1,0)"  onclick="moveSelectedRobot(1,0)">→</button>
+    </div>
 
     <!-- 宣言パネル（固定下部） -->
     <div id="declare-panel" style="display:none">
