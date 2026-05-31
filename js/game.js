@@ -98,6 +98,9 @@ function placeRobotsAndGoal() {
       document.querySelectorAll('.robot').forEach(ro => removeRobotAura(ro));
       addRobotAura(robotEl);
       selectedRobot = robotEl;
+      // 選択フラッシュアニメーション
+      robotEl.classList.add('select-flash');
+      setTimeout(() => robotEl.classList.remove('select-flash'), 250);
       // 十字キー中央のペンギン画像を更新
       _updateDpadPenguin(robotEl.dataset.color);
     });
@@ -169,9 +172,15 @@ function moveSelectedRobot(dx, dy) {
 
   // 移動アニメーション
   selectedRobot.classList.add('moving');
-  setTimeout(() => selectedRobot.classList.remove('moving'), 400);
-
   moveRobotEl(selectedRobot, x, y);
+
+  // 停止バウンド（壁にぶつかって止まった）
+  setTimeout(() => {
+    selectedRobot.classList.remove('moving');
+    selectedRobot.classList.add('bounce-stop');
+    setTimeout(() => selectedRobot.classList.remove('bounce-stop'), 300);
+  }, 350);
+
   moves++;
 
   // 下方向に止まった場合は正面に戻す
@@ -206,20 +215,18 @@ function moveSelectedRobot(dx, dy) {
   if (goal && x === goal.x && y === goal.y && selectedRobot.dataset.color === goalColor) {
     const phase = getRoundPhase();
     if (phase === 'answering') {
-      // 正解アニメーション
       selectedRobot.classList.add('correct');
       const goalStar = document.querySelector('.goalStar');
       if (goalStar) goalStar.classList.add('goal-reached');
-
       showResultPopup(true);
+      // ゴールパーティクル
+      _spawnGoalParticles(goal, goalColor);
 
       setTimeout(() => {
         selectedRobot.classList.remove('correct');
         if (isOnlineMode()) {
-          // オンライン：サーバーに報告（サーバーが正解判定してroundEndedを送信）
           sendGoalReachedOnline(selectedRobot.dataset.color, moves);
         } else {
-          // オフライン：ローカルで解答処理
           resolveAnswer(true, moves);
         }
       }, 600);
@@ -227,6 +234,7 @@ function moveSelectedRobot(dx, dy) {
       // ソロ練習モード
       setStatus('クリア！');
       showResultPopup(true);
+      _spawnGoalParticles(goal, goalColor);
     }
   } else {
     setStatus('');
@@ -307,6 +315,37 @@ function _updateDpadPenguin(color) {
     img.style.display = 'block';
   } else {
     img.style.display = 'none';
+  }
+}
+
+/**
+ * ゴール位置にパーティクルを生成する
+ * @param {{x:number, y:number}} goalPos
+ * @param {string} color
+ */
+function _spawnGoalParticles(goalPos, color) {
+  const goalCell = document.querySelector(`.cell[data-x='${goalPos.x}'][data-y='${goalPos.y}']`);
+  if (!goalCell) return;
+
+  const colors = ['#fbbf24', '#f59e0b', '#fff', color, '#fde68a'];
+  const count = 10;
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'goal-particle';
+    const angle = (i / count) * 360;
+    const dist = 30 + Math.random() * 30;
+    const tx = Math.cos(angle * Math.PI / 180) * dist;
+    const ty = Math.sin(angle * Math.PI / 180) * dist;
+    p.style.setProperty('--tx', `${tx}px`);
+    p.style.setProperty('--ty', `${ty}px`);
+    p.style.background = colors[i % colors.length];
+    p.style.top = '50%';
+    p.style.left = '50%';
+    p.style.marginTop = '-4px';
+    p.style.marginLeft = '-4px';
+    goalCell.appendChild(p);
+    setTimeout(() => p.remove(), 600);
   }
 }
 
