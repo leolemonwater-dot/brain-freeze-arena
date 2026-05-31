@@ -1231,6 +1231,18 @@
     <!-- 正解/不正解ポップアップ -->
     <div id="result-popup"></div>
 
+    <!-- ソロモード用ボタン -->
+    <div id="solo-buttons" style="display:none; justify-content:center; gap:10px; padding:8px 16px;">
+      <button onclick="generateBoard()"
+        style="flex:1; padding:10px; background:#10b981; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:0.95rem; cursor:pointer;">
+        🔄 盤面再生成
+      </button>
+      <button onclick="regenerateGoalAndReset()"
+        style="flex:1; padding:10px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:0.95rem; cursor:pointer;">
+        🎯 ゴール再生成
+      </button>
+    </div>
+
     <!-- 方向ボタン（スマホ用） -->
     <div id="direction-buttons">
       <button class="dir-btn" ontouchstart="moveSelectedRobot(-1,0)" onclick="moveSelectedRobot(-1,0)">←</button>
@@ -1247,8 +1259,13 @@
       </p>
       <div class="declare-controls">
         <div class="declare-input-group">
-          <input type="number" id="declare-moves" min="1" max="99" value="3" />
-          <span>手</span>
+          <button onclick="changeDeclareMove(-1)"
+            style="width:40px; height:40px; font-size:1.3rem; font-weight:700; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; line-height:1;">－</button>
+          <span id="declare-moves-display"
+            style="min-width:48px; text-align:center; font-size:1.4rem; font-weight:800; color:#1f2937;">3</span>
+          <button onclick="changeDeclareMove(1)"
+            style="width:40px; height:40px; font-size:1.3rem; font-weight:700; background:#e5e7eb; border:none; border-radius:8px; cursor:pointer; line-height:1;">＋</button>
+          <span style="font-weight:600; font-size:1rem; color:#374151;">手</span>
         </div>
         <button id="declare-btn" onclick="onDeclare()">宣言</button>
         <button id="pass-btn" onclick="handlePass()">パス</button>
@@ -1316,6 +1333,10 @@
       currentGameType = 'solo';
       showScreen('game-screen');
       document.getElementById('declare-panel').style.display = 'none';
+      // ソロモード用ボタンを表示
+      document.getElementById('solo-buttons').style.display = 'flex';
+      // 方向ボタンを表示
+      document.getElementById('direction-buttons').classList.add('visible');
       generateBoard();
     }
 

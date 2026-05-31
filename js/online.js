@@ -96,6 +96,9 @@ function _setupListeners() {
     setRoundPhaseOnline('thinking');
     resetDeclarations();
     moves = 0;
+    // 宣言手数表示を3にリセット
+    const display = document.getElementById('declare-moves-display');
+    if (display) display.textContent = '3';
     _applyBoardData(boardData);
   });
 

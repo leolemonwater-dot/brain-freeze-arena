@@ -139,8 +139,7 @@ function moveSelectedRobot(dx, dy) {
   if (phase === 'thinking' || phase === 'additional') return;
 
   // 解答フェーズ：現在の解答者のみ操作可能
-  if (phase === 'answering') {
-    const answerer = getCurrentAnswerer();
+  if (phase === 'answering') {    const answerer = getCurrentAnswerer();
     if (!answerer) return;
     
     // 選択中のプレイヤーが現在の解答者でない場合は操作不可
@@ -517,9 +516,20 @@ function handleDeclare(playerId, movesCount) {
   updateScoreboard();
 }
 
+// ---- 宣言手数の増減 ----
+function changeDeclareMove(delta) {
+  const display = document.getElementById('declare-moves-display');
+  if (!display) return;
+  let val = parseInt(display.textContent) + delta;
+  if (val < 1) val = 1;
+  if (val > 99) val = 99;
+  display.textContent = val;
+}
+
 // ---- 宣言UIから呼ぶ ----
 function onDeclare() {
-  const movesVal = parseInt(document.getElementById('declare-moves').value);
+  const display = document.getElementById('declare-moves-display');
+  const movesVal = display ? parseInt(display.textContent) : NaN;
   if (isNaN(movesVal) || movesVal < 1) {
     alert('手数を入力してください');
     return;
