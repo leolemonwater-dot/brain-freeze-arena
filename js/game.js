@@ -139,20 +139,26 @@ function regenerateGoalAndReset() {
 function moveSelectedRobot(dx, dy) {
   if (!selectedRobot) return;
 
-  // 対戦モード中は解答フェーズのみ移動を許可
-  const phase = getRoundPhase();
-  if (phase === 'thinking' || phase === 'additional') return;
+  // ソロモードの場合は独自フェーズで判定
+  if (currentGameType === 'solo') {
+    if (soloPhase !== 'answering') return; // 宣言前は操作不可
+  } else {
+    // 対戦モード中は解答フェーズのみ移動を許可
+    const phase = getRoundPhase();
+    if (phase === 'thinking' || phase === 'additional') return;
 
-  // 解答フェーズ：現在の解答者のみ操作可能
-  if (phase === 'answering') {    const answerer = getCurrentAnswerer();
-    if (!answerer) return;
-    
-    // 選択中のプレイヤーが現在の解答者でない場合は操作不可
-    if (selectedPlayerId !== answerer.playerId) {
-      setStatus('現在の解答者ではありません。待機してください。');
-      return;
+    // 解答フェーズ：現在の解答者のみ操作可能
+    if (phase === 'answering') {
+      const answerer = getCurrentAnswerer();
+      if (!answerer) return;
+      if (selectedPlayerId !== answerer.playerId) {
+        setStatus('現在の解答者ではありません。待機してください。');
+        return;
+      }
     }
   }
+
+  const phase = getRoundPhase();
 
   const startX = parseInt(selectedRobot.dataset.x);
   const startY = parseInt(selectedRobot.dataset.y);
@@ -235,6 +241,11 @@ function moveSelectedRobot(dx, dy) {
       setStatus('クリア！');
       showResultPopup(true);
       _spawnGoalParticles(goal, goalColor);
+      // ソロフェーズをリセット（次の宣言待ちへ）
+      soloPhase = 'thinking';
+      const declareBtn = document.getElementById('declare-btn');
+      if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
+      document.getElementById('direction-buttons').classList.remove('visible');
     }
   } else {
     setStatus('');
@@ -270,6 +281,12 @@ function updateMovesDisplay() {
  * 盤面を完全に再生成する（四角形検知付き）
  */
 function generateBoard() {
+  // ソロモードのフェーズをリセット
+  soloPhase = 'thinking';
+  const declareBtn = document.getElementById('declare-btn');
+  if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
+  const dirBtns = document.getElementById('direction-buttons');
+  if (dirBtns) dirBtns.classList.remove('visible');
   const maxAttempts = 50; // 最大試行回数
   let attempts = 0;
   
@@ -585,6 +602,12 @@ function changeDeclareMove(delta) {
   display.textContent = val;
 }
 
+// ---- ソロモード用フェーズ管理 ----
+let soloPhase = 'thinking'; // 'thinking' | 'answering'
+let soloDeclaredMoves = 0;
+
+function getSoloPhase() { return soloPhase; }
+
 // ---- 宣言UIから呼ぶ ----
 function onDeclare() {
   const display = document.getElementById('declare-moves-display');
@@ -603,9 +626,17 @@ function onDeclare() {
       declareBtn.style.opacity = '0.5';
     }
   } else if (currentGameType === 'solo') {
-    // ソロ：プレイヤー選択不要、そのまま宣言（ソロはラウンド管理なし）
-    // 宣言手数を記録して解答フェーズへ（ソロ用の簡易処理）
-    selectedPlayerId = 'solo';
+    // ソロ：宣言して解答フェーズへ
+    soloDeclaredMoves = movesVal;
+    soloPhase = 'answering';
+    moves = 0;
+    resetRobotsToInitial();
+    setStatus(`宣言: ${movesVal}手以内でゴールを目指せ！`);
+    // 宣言ボタンをグレーアウト
+    const declareBtn = document.getElementById('declare-btn');
+    if (declareBtn) { declareBtn.disabled = true; declareBtn.style.opacity = '0.5'; }
+    // 方向ボタンを表示
+    document.getElementById('direction-buttons').classList.add('visible');
   } else {
     // オフライン：ローカルで処理
     if (!selectedPlayerId) {
