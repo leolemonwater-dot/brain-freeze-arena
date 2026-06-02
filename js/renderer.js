@@ -27,12 +27,15 @@ function renderEmptyBoard(boardEl) {
     }
   }
   
-  // ロボットを元の位置に戻す
+  // ロボットを元の位置に戻す（#boardの直接子として再配置）
+  const board = document.getElementById('board');
   robots.forEach(robot => {
-    const x = robot.dataset.x;
-    const y = robot.dataset.y;
-    const cell = boardEl.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
-    if (cell) cell.appendChild(robot);
+    const x = parseInt(robot.dataset.x);
+    const y = parseInt(robot.dataset.y);
+    const pos = _gridToPos(x, y);
+    robot.style.left = pos.left;
+    robot.style.top  = pos.top;
+    board.appendChild(robot);
   });
   
   // ゴールを元の位置に戻す
@@ -182,7 +185,21 @@ function getRobotImagePath(color, direction = 'front') {
 }
 
 /**
- * ロボット要素を生成してDOMに配置する
+ * グリッド座標からleft/top（%）を計算する
+ * @param {number} x
+ * @param {number} y
+ * @returns {{left: string, top: string}}
+ */
+function _gridToPos(x, y) {
+  const pct = 100 / SIZE;
+  return {
+    left: `${x * pct}%`,
+    top:  `${y * pct}%`
+  };
+}
+
+/**
+ * ロボット要素を生成してDOMに配置する（#boardの直接子要素としてabsolute配置）
  * @param {string} color
  * @param {number} x
  * @param {number} y
@@ -190,7 +207,7 @@ function getRobotImagePath(color, direction = 'front') {
  * @returns {HTMLElement}
  */
 function createRobotEl(color, x, y, onSelect) {
-  const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
+  const board = document.getElementById('board');
   const r = document.createElement('div');
   r.className = 'robot';
   r.dataset.x      = x;
@@ -198,29 +215,29 @@ function createRobotEl(color, x, y, onSelect) {
   r.dataset.initX  = x;
   r.dataset.initY  = y;
   r.dataset.color  = color;
-  r.dataset.facing = 'front'; // 現在の向き
+  r.dataset.facing = 'front';
+
+  // position: absolute で座標を設定
+  const pos = _gridToPos(x, y);
+  r.style.left = pos.left;
+  r.style.top  = pos.top;
 
   const imgPath = getRobotImagePath(color, 'front');
   if (imgPath) {
-    // 画像を表示
     const img = document.createElement('img');
     img.src = imgPath;
     img.alt = color;
     r.appendChild(img);
   } else {
-    // 画像なしの色：従来の丸スタイルにフォールバック
-    r.style.background = color;
-    r.style.borderRadius = '50%';
-    r.style.width = '70%';
-    r.style.height = '70%';
-    r.style.top = '15%';
-    r.style.left = '15%';
-    r.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-    r.style.border = '2px solid rgba(255,255,255,0.6)';
+    // フォールバック：丸スタイル
+    r.style.background    = color;
+    r.style.borderRadius  = '50%';
+    r.style.boxShadow     = '0 4px 12px rgba(0,0,0,0.3)';
+    r.style.border        = '2px solid rgba(255,255,255,0.6)';
   }
 
   r.onclick = () => onSelect(r);
-  cell.appendChild(r);
+  board.appendChild(r);
   return r;
 }
 
@@ -261,7 +278,7 @@ function removeRobotAura(robotEl) {
 }
 
 /**
- * ロボットをDOMの指定セルに移動する
+ * ロボットをグリッド座標に移動する（left/top を更新してCSSトランジションで滑らせる）
  * @param {HTMLElement} robotEl
  * @param {number} x
  * @param {number} y
@@ -269,6 +286,7 @@ function removeRobotAura(robotEl) {
 function moveRobotEl(robotEl, x, y) {
   robotEl.dataset.x = x;
   robotEl.dataset.y = y;
-  const cell = document.querySelector(`.cell[data-x='${x}'][data-y='${y}']`);
-  cell.appendChild(robotEl);
+  const pos = _gridToPos(x, y);
+  robotEl.style.left = pos.left;
+  robotEl.style.top  = pos.top;
 }

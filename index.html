@@ -773,18 +773,16 @@
     }
 
     .robot {
-      width: 100%;
-      height: 100%;
-      border-radius: 0;
       position: absolute;
-      top: 0;
-      left: 0;
+      width: calc(100% / 12);   /* 盤面の1マス分 */
+      height: calc(100% / 12);
       cursor: pointer;
       z-index: 2;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                  top  0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       border: none;
       box-shadow: none;
-      background: none !important; /* 丸の背景色を無効化 */
+      background: none !important;
       overflow: hidden;
     }
 

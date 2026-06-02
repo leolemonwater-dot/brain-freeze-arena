@@ -176,16 +176,17 @@ function moveSelectedRobot(dx, dy) {
     sendMoveOnline(selectedRobot.dataset.color, dx, dy);
   }
 
-  // 移動アニメーション
+  // 移動アニメーション（CSSトランジションで自動的に滑る）
   selectedRobot.classList.add('moving');
   moveRobotEl(selectedRobot, x, y);
 
-  // 停止バウンド（壁にぶつかって止まった）
+  // 停止バウンド
+  const slideDuration = 350;
   setTimeout(() => {
     selectedRobot.classList.remove('moving');
     selectedRobot.classList.add('bounce-stop');
     setTimeout(() => selectedRobot.classList.remove('bounce-stop'), 300);
-  }, 350);
+  }, slideDuration);
 
   moves++;
 
