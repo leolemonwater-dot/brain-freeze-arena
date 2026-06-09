@@ -98,10 +98,10 @@ function placeRobotsAndGoal() {
       document.querySelectorAll('.robot').forEach(ro => removeRobotAura(ro));
       addRobotAura(robotEl);
       selectedRobot = robotEl;
-      // 選択フラッシュアニメーション
+      // 選択フラッシュ＋効果音
       robotEl.classList.add('select-flash');
       setTimeout(() => robotEl.classList.remove('select-flash'), 250);
-      // 十字キー中央のペンギン画像を更新
+      sfxSelect();
       _updateDpadPenguin(robotEl.dataset.color);
     });
     robots.push(r);
@@ -179,6 +179,7 @@ function moveSelectedRobot(dx, dy) {
   // 移動アニメーション（CSSトランジションで自動的に滑る）
   selectedRobot.classList.add('moving');
   moveRobotEl(selectedRobot, x, y);
+  sfxSlide();
 
   // 停止バウンド
   const slideDuration = 350;
@@ -205,6 +206,7 @@ function moveSelectedRobot(dx, dy) {
       selectedRobot.classList.add('incorrect');
       if (currentMovesEl) currentMovesEl.classList.add('over-limit');
       showResultPopup(false);
+      sfxWrong();
       setTimeout(() => {
         selectedRobot.classList.remove('incorrect');
         if (currentMovesEl) currentMovesEl.classList.remove('over-limit');
@@ -226,7 +228,7 @@ function moveSelectedRobot(dx, dy) {
       const goalStar = document.querySelector('.goalStar');
       if (goalStar) goalStar.classList.add('goal-reached');
       showResultPopup(true);
-      // ゴールパーティクル
+      sfxGoal();
       _spawnGoalParticles(goal, goalColor);
 
       setTimeout(() => {
@@ -241,6 +243,7 @@ function moveSelectedRobot(dx, dy) {
       // ソロ練習モード
       setStatus('クリア！');
       showResultPopup(true);
+      sfxGoal();
       _spawnGoalParticles(goal, goalColor);
       // ソロフェーズをリセット（次の宣言待ちへ）
       soloPhase = 'thinking';
@@ -492,6 +495,7 @@ function onPhaseChange(phase, data) {
     if (timerEl) {
       timerEl.textContent = `思考中... 残り ${data}秒`;
       timerEl.style.color = data <= 10 ? '#dc2626' : '#374151';
+      if (data <= 10 && data > 0) sfxTick();
     }
   } else if (phase === 'additional') {
     setStatus('アディショナルタイム！追加宣言を受け付けています');
@@ -501,6 +505,7 @@ function onPhaseChange(phase, data) {
     if (timerEl) {
       timerEl.textContent = `アディショナル: 残り ${data}秒`;
       timerEl.style.color = data <= 10 ? '#dc2626' : '#1d4ed8';
+      if (data <= 10 && data > 0) sfxTick();
     }
   } else if (phase === 'answering') {
     const answerer = getCurrentAnswerer();
@@ -633,6 +638,7 @@ function onDeclare() {
     moves = 0;
     resetRobotsToInitial();
     setStatus(`宣言: ${movesVal}手以内でゴールを目指せ！`);
+    sfxDeclare();
     // 宣言ボタンをグレーアウト
     const declareBtn = document.getElementById('declare-btn');
     if (declareBtn) { declareBtn.disabled = true; declareBtn.style.opacity = '0.5'; }
@@ -645,6 +651,7 @@ function onDeclare() {
       return;
     }
     handleDeclare(selectedPlayerId, movesVal);
+    sfxDeclare();
     const playerCard = document.querySelector('.player-score.selected-player');
     if (playerCard) {
       playerCard.classList.add('bounce');
