@@ -72,12 +72,51 @@ function sfxSelect() {
   _tone(900, 0.06, 'sine', 0.15, 0.05, 'hit');
 }
 
-/** 移動・停止音（氷の滑る → 鈍い衝突） */
+/** 移動・停止音（シュー → トン） */
 function sfxSlide() {
-  // 滑る音（ノイズっぽくsawtooth）
-  _tone(200, 0.15, 'sawtooth', 0.1, 0, 'fade');
-  // 停止の衝突音
-  _tone(120, 0.12, 'triangle', 0.2, 0.15, 'hit');
+  try {
+    const ctx = _getCtx();
+
+    // 「シュー」：ホワイトノイズでブラシ音
+    const bufferSize = ctx.sampleRate * 0.18;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.4;
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    // ハイパスフィルタで「シュー」らしく
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 3000;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.001, ctx.currentTime);
+    noiseGain.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 0.04);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    noiseGain.connect(ctx.destination);
+    noise.start(ctx.currentTime);
+    noise.stop(ctx.currentTime + 0.18);
+
+    // 「トン」：低い打撃音（短いサイン波）
+    const osc = ctx.createOscillator();
+    const oscGain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, ctx.currentTime + 0.16);
+    osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.32);
+    oscGain.gain.setValueAtTime(0.5, ctx.currentTime + 0.16);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
+
+    osc.connect(oscGain);
+    oscGain.connect(ctx.destination);
+    osc.start(ctx.currentTime + 0.16);
+    osc.stop(ctx.currentTime + 0.33);
+  } catch (e) {}
 }
 
 /** 宣言音（短いビープ） */

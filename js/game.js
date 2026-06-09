@@ -250,6 +250,9 @@ function moveSelectedRobot(dx, dy) {
       const declareBtn = document.getElementById('declare-btn');
       if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
       document.getElementById('direction-buttons').classList.remove('visible');
+      // 宣言パネルを再表示
+      const declarePanelSolo = document.getElementById('declare-panel');
+      if (declarePanelSolo) declarePanelSolo.style.display = 'block';
     }
   } else {
     setStatus('');
@@ -291,6 +294,11 @@ function generateBoard() {
   if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
   const dirBtns = document.getElementById('direction-buttons');
   if (dirBtns) dirBtns.classList.remove('visible');
+  // 宣言パネルを再表示（ソロモードの場合のみ）
+  if (currentGameType === 'solo') {
+    const dp = document.getElementById('declare-panel');
+    if (dp) dp.style.display = 'block';
+  }
   const maxAttempts = 50; // 最大試行回数
   let attempts = 0;
   
@@ -639,7 +647,9 @@ function onDeclare() {
     resetRobotsToInitial();
     setStatus(`宣言: ${movesVal}手以内でゴールを目指せ！`);
     sfxDeclare();
-    // 宣言ボタンをグレーアウト
+    // 宣言パネルを非表示にして方向ボタンを表示
+    const declarePanelSolo = document.getElementById('declare-panel');
+    if (declarePanelSolo) declarePanelSolo.style.display = 'none';
     const declareBtn = document.getElementById('declare-btn');
     if (declareBtn) { declareBtn.disabled = true; declareBtn.style.opacity = '0.5'; }
     // 方向ボタンを表示
