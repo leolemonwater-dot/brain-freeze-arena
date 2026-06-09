@@ -253,6 +253,8 @@ function moveSelectedRobot(dx, dy) {
       // 宣言パネルを再表示
       const declarePanelSolo = document.getElementById('declare-panel');
       if (declarePanelSolo) declarePanelSolo.style.display = 'block';
+      // 2秒後に次のステージへ自動遷移
+      setTimeout(() => generateBoard(), 2000);
     }
   } else {
     setStatus('');
