@@ -260,3 +260,6 @@ function placeLAndIWalls() {
     console.warn(`L字壁を${lCorners.length}個しか配置できませんでした（目標: ${targetTotal}個）`);
   }
 }
+
+// ESモジュール用エクスポート
+export { SIZE, walls, lCorners, isCenter, setWallBi, initWalls, hasSquareEnclosure, placeLAndIWalls };

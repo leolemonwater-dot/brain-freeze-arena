@@ -159,3 +159,6 @@ function sfxRoundStart() {
 function sfxTick() {
   _tone(880, 0.05, 'square', 0.15, 0, 'hit');
 }
+
+// ESモジュール用エクスポート
+export { sfxSelect, sfxSlide, sfxDeclare, sfxGoal, sfxWrong, sfxPass, sfxRoundStart, sfxTick };

@@ -111,3 +111,10 @@ function getRemainingSeconds() {
 function getTimerState() {
   return timerState;
 }
+
+// ESモジュール用エクスポート
+export {
+  ADDITIONAL_TIME_SEC, THINKING_TIME_SEC,
+  stopTimer, startThinkingTimer, startAdditionalTimer,
+  getAdditionalStartRemaining, getRemainingSeconds, getTimerState
+};

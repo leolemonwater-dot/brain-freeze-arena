@@ -182,3 +182,12 @@ function getScoreModeWinner() {
 function resetAllPlayers() {
   players = [];
 }
+
+// ESモジュール用エクスポート
+export {
+  addPlayer, getPlayers, getPlayerById,
+  resetDeclarations, resetPenalties, resetAllPlayers,
+  declareMove, getSortedDeclarations, passPlayer,
+  addWin, addScore, penalizePlayer,
+  getQuickModeWinner, getScoreModeWinner
+};

@@ -132,3 +132,6 @@ function showResultScreen({ winner, players, mode, gameType }) {
   if (offlineBtn) offlineBtn.style.display = gameType === 'offline' ? 'block' : 'none';
   if (onlineBtn)  onlineBtn.style.display  = gameType === 'online'  ? 'block' : 'none';
 }
+
+// ESモジュール用エクスポート
+export { showScreen, showConfirmDialog, showResultScreen };

@@ -153,3 +153,11 @@ function _setOnlineGameMode(mode, round) {
   currentRound = round;
   _onGameEnd   = null; // オンラインはサーバーが管理
 }
+
+// ESモジュール用エクスポート
+export {
+  QUICK_WIN_COUNT, SCORE_ROUNDS,
+  setupGame, nextRound,
+  getGameMode, getGameState, getCurrentRound,
+  _setOnlineGameMode
+};

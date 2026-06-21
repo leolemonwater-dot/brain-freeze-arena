@@ -290,3 +290,10 @@ function moveRobotEl(robotEl, x, y) {
   robotEl.style.left = pos.left;
   robotEl.style.top  = pos.top;
 }
+
+// ESモジュール用エクスポート
+export {
+  renderEmptyBoard, drawWalls, makeWallEl, renderGoal,
+  getRobotImagePath, createRobotEl, setRobotFacing,
+  addRobotAura, removeRobotAura, moveRobotEl, _gridToPos
+};

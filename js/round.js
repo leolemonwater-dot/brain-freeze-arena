@@ -225,3 +225,10 @@ function _setOnlineAnswerer(playerId, moves) {
   answerQueue = [{ playerId, moves, timestamp: Date.now() }];
   answerIndex = 0;
 }
+
+// ESモジュール用エクスポート
+export {
+  startRound, submitDeclaration, submitPass, startAnswerPhase,
+  getCurrentAnswerer, resolveAnswer, getRoundPhase,
+  setRoundPhaseOnline, _setOnlineAnswerer
+};

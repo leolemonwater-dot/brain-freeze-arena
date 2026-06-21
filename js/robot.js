@@ -35,3 +35,6 @@ function calcRobotDestination(startX, startY, dx, dy, robots, self) {
   }
   return { x, y };
 }
+
+// ESモジュール用エクスポート
+export { calcRobotDestination };
