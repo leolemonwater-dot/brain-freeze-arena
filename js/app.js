@@ -32,6 +32,14 @@ import { stopTimer } from './timer.js';
 import { sfxDeclare } from './sound.js';
 
 // -------------------------------------------------------
+// モジュールスコープの状態変数
+// -------------------------------------------------------
+
+let currentGameType = 'offline'; // 'offline' | 'online' | 'solo'
+let setupPlayers    = [];
+let selectedMode    = 'quick';
+
+// -------------------------------------------------------
 // 初期化
 // -------------------------------------------------------
 
@@ -114,6 +122,8 @@ window.onCreateRoom = function() {
   createRoom(mode);
 };
 
+window.createRoom = window.onCreateRoom; // index.html の onclick="createRoom()" 対応
+
 window.onlineJoinRoom = function(roomId) { joinRoom(roomId); };
 
 // -------------------------------------------------------
@@ -127,9 +137,6 @@ window.onlineLeaveRoom   = leaveRoom;
 // -------------------------------------------------------
 // オフライン設定画面
 // -------------------------------------------------------
-
-let setupPlayers = [];
-let selectedMode = 'quick';
 
 window.selectMode = function(mode) {
   selectedMode = mode;
