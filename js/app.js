@@ -96,6 +96,12 @@ window.onEnterLobby = function() {
   enterLobby(name);
 };
 
+// index.htmlのonclick="enterLobby()" から呼ばれる
+window.enterLobby = window.onEnterLobby;
+
+// index.htmlのonclick="showScreen(...)" から呼ばれる
+window.showScreen = showScreen;
+
 // -------------------------------------------------------
 // 待合室
 // -------------------------------------------------------
