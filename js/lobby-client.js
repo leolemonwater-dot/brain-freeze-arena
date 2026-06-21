@@ -146,6 +146,7 @@ function setupLobbyListeners(sock) {
   // ゲーム開始 → ページ遷移なしでゲーム画面に切り替え
   sock.on('gameStarted', ({ room }) => {
     // オンラインモードの変数を設定
+    initMode('online');
     onlineModeActive = true;
     onlineRoomId     = currentRoomId;
     onlinePlayerName = lobbyPlayerName;

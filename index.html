@@ -1426,11 +1426,10 @@
 
     function goToSoloMode() {
       currentGameType = 'solo';
+      initMode('solo');
       showScreen('game-screen');
       document.getElementById('declare-panel').style.display = 'block';
-      // ソロモード用ボタンを表示
       document.getElementById('solo-buttons').style.display = 'flex';
-      // ヒントテキストを非表示
       const hint = document.getElementById('selected-player-hint');
       if (hint) hint.style.display = 'none';
       generateBoard();
@@ -1515,17 +1514,14 @@
 
     function onStartGame() {
       if (setupPlayers.length < 2) { alert('プレイヤーを2人以上追加してください'); return; }
-      // オフラインモードを明示的に設定
-      onlineModeActive = false;
-      // ソロボタンを非表示
+      currentGameType = 'offline';
+      initMode('offline');
       document.getElementById('solo-buttons').style.display = 'none';
-      // ヒントテキストを再表示
       const hint = document.getElementById('selected-player-hint');
       if (hint) hint.style.display = 'block';
       showScreen('game-screen');
       document.getElementById('declare-panel').style.display = 'block';
       startGame(selectedMode, setupPlayers.map(p => p.name));
-      // 初期プレイヤー選択
       const players = getPlayers();
       if (players.length > 0) selectPlayer(players[0].id);
     }

@@ -21,6 +21,59 @@ const scoreboardEl    = document.getElementById('scoreboard');
 const currentMovesEl  = document.getElementById('current-moves');
 const resultPopupEl   = document.getElementById('result-popup');
 
+/**
+ * モード開始時に全ての共有状態をリセットする
+ * ソロ・オフライン・オンラインどのモードへ遷移する時も必ず呼ぶ
+ * @param {'solo'|'offline'|'online'} mode
+ */
+function initMode(mode) {
+  // ---- 盤面状態リセット ----
+  robots        = [];
+  selectedRobot = null;
+  moves         = 0;
+  goal          = null;
+  goalColor     = null;
+
+  // ---- プレイヤー状態リセット ----
+  resetAllPlayers();       // players.js
+  selectedPlayerId = null;
+
+  // ---- タイマーリセット ----
+  stopTimer();             // timer.js
+
+  // ---- ラウンド状態リセット ----
+  // round.jsのフェーズをendedに戻す
+  setRoundPhaseOnline('ended'); // round.jsのsetRoundPhaseOnline
+
+  // ---- ソロ状態リセット ----
+  soloPhase        = 'thinking';
+  soloDeclaredMoves = 0;
+
+  // ---- オンライン状態リセット ----
+  onlineModeActive = (mode === 'online');
+
+  // ---- UIリセット ----
+  setStatus('');
+  if (currentMovesEl) currentMovesEl.style.display = 'none';
+  if (scoreboardEl)   scoreboardEl.innerHTML = '';
+  if (roundInfoEl)    roundInfoEl.textContent = '';
+  if (timerEl)        timerEl.textContent = '';
+
+  // 宣言パネルの状態をリセット
+  const declareBtn = document.getElementById('declare-btn');
+  if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
+  const dirBtns = document.getElementById('direction-buttons');
+  if (dirBtns) dirBtns.classList.remove('visible');
+  const soloButtons = document.getElementById('solo-buttons');
+  if (soloButtons) soloButtons.style.display = 'none';
+
+  // DOM上のロボットをクリア
+  document.querySelectorAll('.robot').forEach(r => r.remove());
+  document.querySelectorAll('.goalStar').forEach(g => g.remove());
+
+  console.log(`[initMode] mode=${mode}`);
+}
+
 /** ステータステキストを更新する */
 function setStatus(txt = '') {
   statusEl.textContent = txt;
