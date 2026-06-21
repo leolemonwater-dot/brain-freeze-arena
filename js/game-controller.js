@@ -439,3 +439,39 @@ export function updateSelectedPlayerHint() {
     hintEl.style.fontWeight = '400';
   }
 }
+
+// -------------------------------------------------------
+// 可変状態の setter（ESモジュールで export let の再代入対応）
+// -------------------------------------------------------
+
+export function setSelectedRobot(r)  { selectedRobot    = r; }
+export function setMoves(m)          { moves            = m; }
+export function setGoal(g, c)        { goal = g; goalColor = c; }
+export function setGoalColor(c)      { goalColor        = c; }
+export function setSelectedPlayerId(id) { selectedPlayerId = id; }
+
+// window ブリッジ（mode-online.js から呼ぶ）
+if (typeof window !== 'undefined') {
+  window._gcSetSelectedRobot  = (r)    => { selectedRobot    = r; };
+  window._gcSetGoal           = (g, c) => { goal = g; goalColor = c; };
+  window._gcSetSelectedPlayerId = (id) => { selectedPlayerId = id; };
+}
+
+// _updateDeclarePanel は app.js に移すため、互換用に残す
+export function _updateDeclarePanel(isOnline, myPlayerId, phase) {
+  const hintEl    = document.getElementById('selected-player-hint');
+  const declareBtn = document.getElementById('declare-btn');
+  if (isOnline) {
+    if (hintEl) hintEl.style.display = 'none';
+    if (declareBtn) {
+      const myPlayer = getPlayers().find(p => p.id === myPlayerId);
+      const declared = myPlayer?.declaration !== null;
+      const ph = phase ?? getRoundPhase();
+      declareBtn.disabled    = declared || ph === 'answering';
+      declareBtn.style.opacity = (declared || ph === 'answering') ? '0.5' : '1';
+    }
+  } else {
+    if (hintEl) hintEl.style.display = 'block';
+    if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
+  }
+}
