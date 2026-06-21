@@ -14,7 +14,8 @@ import {
   updateRoundInfo, selectPlayer, updateSelectedPlayerHint,
   robots, selectedRobot, moves, goal, goalColor, selectedPlayerId,
   COLORS, boardEl, currentMovesEl, timerEl,
-  _updateDpadPenguin, _spawnGoalParticles
+  _updateDpadPenguin, _spawnGoalParticles,
+  setSelectedRobot, setMoves, setGoal, setGoalColor, setSelectedPlayerId
 } from './game-controller.js';
 import { startOfflineGame, onDeclareOffline, onPassOffline, generateBoardOffline } from './mode-offline.js';
 import { onDeclareSolo, onGoalSolo, generateBoardSolo, soloPhase, setSoloPhase } from './mode-solo.js';
@@ -29,18 +30,6 @@ import { getRoundPhase, getCurrentAnswerer, resolveAnswer } from './round.js';
 import { getPlayers, getPlayerById } from './players.js';
 import { stopTimer } from './timer.js';
 import { sfxDeclare } from './sound.js';
-
-// -------------------------------------------------------
-// 現在のゲームタイプ
-// -------------------------------------------------------
-
-let currentGameType = 'offline'; // 'offline' | 'online' | 'solo'
-
-// game-controller の可変変数を app.js から更新するためのブリッジ
-// （ESモジュールのexport let は再代入できないため setter を使う）
-import {
-  setSelectedRobot, setMoves, setGoal, setGoalColor, setSelectedPlayerId
-} from './game-controller.js';
 
 // -------------------------------------------------------
 // 初期化
