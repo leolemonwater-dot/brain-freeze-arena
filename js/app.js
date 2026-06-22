@@ -89,7 +89,6 @@ window.goToSoloMode = function() {
   showScreen('game-screen');
   document.getElementById('declare-panel').style.display = 'block';
   document.getElementById('solo-buttons').style.display = 'flex';
-  document.getElementById('selected-player-hint').style.display = 'none';
   generateBoardSolo();
 };
 
@@ -174,7 +173,6 @@ window.onStartGame = function() {
   currentGameType = 'offline';
   initMode('offline', () => {});
   document.getElementById('solo-buttons').style.display = 'none';
-  document.getElementById('selected-player-hint').style.display = 'block';
   showScreen('game-screen');
   document.getElementById('declare-panel').style.display = 'block';
   startOfflineGame(selectedMode, setupPlayers.map(p => p.name));

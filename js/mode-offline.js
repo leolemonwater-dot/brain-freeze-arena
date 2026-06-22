@@ -107,7 +107,6 @@ function _onPhaseChange(phase, data) {
 
   if (phase === 'thinking') {
     setStatus('思考中... 手数を宣言してください');
-    updateSelectedPlayerHint();
     _updateDeclarePanel(false, null, null);
     _hideDpadShowDeclare();
   } else if (phase === 'thinking_tick') {
@@ -117,7 +116,6 @@ function _onPhaseChange(phase, data) {
     }
   } else if (phase === 'additional') {
     setStatus('アディショナルタイム！追加宣言を受け付けています');
-    updateSelectedPlayerHint();
     _updateDeclarePanel(false, null, null);
   } else if (phase === 'additional_tick') {
     if (timerEl) {
