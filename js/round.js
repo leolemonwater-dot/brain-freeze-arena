@@ -3,7 +3,7 @@
  * ラウンド管理（宣言受付・解答フェーズ・正誤判定・得点計算）
  */
 
-import { declareMove, passPlayer, getSortedDeclarations, getPlayers, penalizePlayer } from './players.js';
+import { declareMove, passPlayer, getSortedDeclarations, getPlayers, penalizePlayer, resetDeclarations } from './players.js';
 import { startThinkingTimer, startAdditionalTimer, stopTimer, getRemainingSeconds, THINKING_TIME_SEC } from './timer.js';
 
 /**
