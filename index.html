@@ -543,8 +543,10 @@
     /* ---- ゲーム画面 ---- */
     #game-screen {
       display: none;
-      min-height: 100vh;
-      padding-bottom: 100px; /* 宣言パネル分の余白 */
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     /* ヘッダー */
@@ -703,11 +705,13 @@
 
     /* 盤面 */
     #board-container {
+      flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 24px 16px 16px 16px;
-      min-height: 50vh;
+      padding: 4px;
+      min-height: 0;
+      overflow: hidden;
     }
 
     #board {
@@ -715,8 +719,9 @@
       grid-template-columns: repeat(12, 1fr);
       grid-template-rows: repeat(12, 1fr);
       gap: 0;
-      width: min(90vw, 600px);
-      height: min(90vw, 600px);
+      /* 残りスペースに収まる正方形 */
+      width: min(calc(100vw - 8px), calc(100vh - 280px));
+      height: min(calc(100vw - 8px), calc(100vh - 280px));
       background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #7dd3fc 100%);
       border-radius: 12px;
       box-shadow: 
