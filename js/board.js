@@ -263,3 +263,11 @@ function placeLAndIWalls() {
 
 // ESモジュール用エクスポート
 export { SIZE, walls, lCorners, isCenter, setWallBi, initWalls, hasSquareEnclosure, placeLAndIWalls };
+
+/**
+ * wallsデータを外部から置き換える（オンライン受信時用）
+ * @param {Array} newWalls
+ */
+export function setWalls(newWalls) {
+  walls = newWalls;
+}

@@ -24,7 +24,7 @@ import {
 import { getGameMode, _setOnlineGameMode } from './mode.js';
 import { showScreen, showResultScreen } from './ui.js';
 import { calcRobotDestination } from './robot.js';
-import { walls } from './board.js';
+import { walls, setWalls } from './board.js';
 import { sfxGoal, sfxTick, sfxDeclare } from './sound.js';
 import { initMode } from './game-controller.js';
 
@@ -476,19 +476,8 @@ function _onPhaseAnswering(answererId, answererName, declaredMoves) {
 // -------------------------------------------------------
 
 function _applyBoardData(boardData) {
-  // walls を上書き（board.js のグローバル変数に直接代入）
-  // ESモジュール化後は import した walls を置き換えられないため
-  // 暫定的に window.walls を使う（フェーズ4で解決）
-  if (window.walls !== undefined) {
-    // 旧game.jsが読まれている間は window.walls が使える
-  }
-  // board-logic 経由で walls を更新
-  const w = boardData.walls;
-  for (let y = 0; y < 12; y++) {
-    for (let x = 0; x < 12; x++) {
-      walls[y][x] = w[y][x];
-    }
-  }
+  // walls をサーバーから受信したデータで置き換える
+  setWalls(boardData.walls);
 
   renderEmptyBoard(boardEl);
   drawWalls();
