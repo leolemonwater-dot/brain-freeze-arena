@@ -5,13 +5,6 @@
 
 import { declareMove, passPlayer, getSortedDeclarations, getPlayers, penalizePlayer } from './players.js';
 import { startThinkingTimer, startAdditionalTimer, stopTimer, getRemainingSeconds, THINKING_TIME_SEC } from './timer.js';
- *   startRound()
- *     → 思考フェーズ（プレイヤーが盤面を見て考える）
- *     → submitDeclaration() で最初の宣言 → アディショナルタイム開始
- *     → アディショナル終了 or 全員宣言 → startAnswerPhase()
- *     → 解答順に resolveAnswer() を呼ぶ
- *     → endRound()
- */
 
 /**
  * @typedef {'thinking'|'additional'|'answering'|'ended'} RoundPhase
