@@ -133,6 +133,7 @@ window.onlineJoinRoom = function(roomId) { joinRoom(roomId); };
 window.onlineToggleReady = toggleReady;
 window.onlineStartGame   = startOnlineGame;
 window.onlineLeaveRoom   = leaveRoom;
+window.leaveRoom         = leaveRoom; // index.html の onclick="leaveRoom()" 対応
 
 // -------------------------------------------------------
 // オフライン設定画面
