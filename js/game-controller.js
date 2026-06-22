@@ -459,10 +459,8 @@ if (typeof window !== 'undefined') {
 
 // _updateDeclarePanel は app.js に移すため、互換用に残す
 export function _updateDeclarePanel(isOnline, myPlayerId, phase) {
-  const hintEl    = document.getElementById('selected-player-hint');
   const declareBtn = document.getElementById('declare-btn');
   if (isOnline) {
-    if (hintEl) hintEl.style.display = 'none';
     if (declareBtn) {
       const myPlayer = getPlayers().find(p => p.id === myPlayerId);
       const declared = myPlayer?.declaration !== null;
@@ -471,7 +469,6 @@ export function _updateDeclarePanel(isOnline, myPlayerId, phase) {
       declareBtn.style.opacity = (declared || ph === 'answering') ? '0.5' : '1';
     }
   } else {
-    if (hintEl) hintEl.style.display = 'block';
     if (declareBtn) { declareBtn.disabled = false; declareBtn.style.opacity = '1'; }
   }
 }

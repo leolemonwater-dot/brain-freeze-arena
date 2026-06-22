@@ -492,8 +492,7 @@ function updateScoreboard() {
     </span>`;
   }).join('');
 
-  // 選択中のプレイヤー名をヒントに表示（オフラインのみ）
-  if (!isOnline) updateSelectedPlayerHint();
+  // 選択中のプレイヤー名をヒントに表示（オフラインのみ）- 削除済み
 }
 
 function selectPlayer(playerId) {
@@ -547,7 +546,6 @@ function onPhaseChange(phase, data) {
 
   if (phase === 'thinking') {
     setStatus('思考中... 手数を宣言してください');
-    if (!isOnlineMode()) updateSelectedPlayerHint();
     _updateDeclarePanel();
     // 方向ボタンを非表示、宣言パネルを再表示
     const dirBtnsThink = document.getElementById('direction-buttons');
@@ -562,7 +560,6 @@ function onPhaseChange(phase, data) {
     }
   } else if (phase === 'additional') {
     setStatus('アディショナルタイム！追加宣言を受け付けています');
-    if (!isOnlineMode()) updateSelectedPlayerHint();
     _updateDeclarePanel();
   } else if (phase === 'additional_tick') {
     if (timerEl) {
@@ -778,15 +775,10 @@ function handlePass() {
  * オンライン/オフライン・フェーズに応じて表示を切り替える
  */
 function _updateDeclarePanel() {
-  const hintEl     = document.getElementById('selected-player-hint');
   const declareBtn = document.getElementById('declare-btn');
   const phase      = getRoundPhase();
 
   if (isOnlineMode()) {
-    // オンライン：「選択中」表示なし
-    if (hintEl) hintEl.style.display = 'none';
-
-    // 宣言済みならボタンをグレーアウト
     if (declareBtn) {
       const myPlayer = getPlayers().find(p => p.id === myPlayerId);
       const declared = myPlayer?.declaration !== null;
@@ -794,8 +786,6 @@ function _updateDeclarePanel() {
       declareBtn.style.opacity = (declared || phase === 'answering') ? '0.5' : '1';
     }
   } else {
-    // オフライン：「選択中」表示あり
-    if (hintEl) hintEl.style.display = 'block';
     if (declareBtn) {
       declareBtn.disabled    = false;
       declareBtn.style.opacity = '1';
