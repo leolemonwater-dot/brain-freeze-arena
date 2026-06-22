@@ -1082,14 +1082,14 @@
       left: 0;
       right: 0;
       background: rgba(255, 255, 255, 0.98);
-      padding: 12px 16px;
+      padding: 6px 12px;
       box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
       z-index: 100;
     }
 
     #declare-panel h3 {
-      font-size: 1rem;
-      margin-bottom: 8px;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
       text-align: center;
       color: #374151;
     }
@@ -1133,7 +1133,7 @@
     }
 
     #declare-btn {
-      padding: 10px 24px;
+      padding: 10px 20px;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
       border: none;
@@ -1141,11 +1141,12 @@
       cursor: pointer;
       font-weight: 700;
       font-size: 1rem;
-      min-width: 100px;
+      flex: 1;
+      max-width: 120px;
     }
 
     #pass-btn {
-      padding: 10px 20px;
+      padding: 10px 16px;
       background: #ef4444;
       color: #fff;
       border: none;
@@ -1153,6 +1154,8 @@
       cursor: pointer;
       font-weight: 600;
       font-size: 0.95rem;
+      flex: 1;
+      max-width: 100px;
     }
 
     /* レスポンシブ調整 */
@@ -1347,7 +1350,7 @@
     <!-- 宣言パネル（固定下部） -->
     <div id="declare-panel" style="display:none">
       <h3>手数を宣言する</h3>
-      <p id="selected-player-hint" style="font-size:0.85rem; color:#6b7280; margin-bottom:8px; text-align:center;">
+      <p id="selected-player-hint" style="display:none;"></p>
         👆 上のプレイヤーカードをクリックして選択してください
       </p>
       <div class="declare-controls">
