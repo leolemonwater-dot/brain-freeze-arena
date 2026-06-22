@@ -4,6 +4,11 @@
  * ラウンドの進行・勝敗判定を担う
  */
 
+import { resetAllPlayers, addPlayer, resetPenalties, getPlayerById, addWin,
+         getQuickModeWinner, getScoreModeWinner } from './players.js';
+import { startRound } from './round.js';
+import { stopTimer } from './timer.js';
+
 /**
  * @typedef {'quick'|'score'} GameMode
  * @typedef {'setup'|'playing'|'finished'} GameState
@@ -43,30 +48,35 @@ function setupGame(mode, playerNames, onGameEnd) {
 /**
  * 次のラウンドを開始する
  * @param {function} onPhaseChange - round.js に渡すフェーズ変化コールバック
+ * @param {function} [onGenerateBoard] - 盤面生成コールバック（循環依存回避）
  */
-function nextRound(onPhaseChange) {
+function nextRound(onPhaseChange, onGenerateBoard) {
   if (gameState === 'finished') return;
 
   currentRound++;
   gameState = 'playing';
 
-  // 前ラウンドのペナルティをリセット（次ラウンド開始時に解除）
-  resetPenalties(); // players.js
+  resetPenalties();
 
-  // Score Mode: ラウンド上限チェック
   if (gameMode === 'score' && currentRound > SCORE_ROUNDS) {
     _endGame();
     return;
   }
 
-  // 新しい盤面を生成
-  generateBoard(); // game.js
-
-  // ラウンド開始
-  startRound(
-    onPhaseChange,
-    (result) => _handleRoundEnd(result, onPhaseChange)
-  );
+  // 盤面生成はコールバックで受け取る（循環依存解消）
+  if (onGenerateBoard) {
+    onGenerateBoard(() => {
+      startRound(
+        onPhaseChange,
+        (result) => _handleRoundEnd(result, onPhaseChange, onGenerateBoard)
+      );
+    });
+  } else {
+    startRound(
+      onPhaseChange,
+      (result) => _handleRoundEnd(result, onPhaseChange, onGenerateBoard)
+    );
+  }
 }
 
 /**
@@ -74,32 +84,25 @@ function nextRound(onPhaseChange) {
  * @param {{winnerId:string|null, points:number}} result
  * @param {function} onPhaseChange
  */
-function _handleRoundEnd(result, onPhaseChange) {
+function _handleRoundEnd(result, onPhaseChange, onGenerateBoard) {
   const { winnerId, points } = result;
 
   if (winnerId) {
     if (gameMode === 'quick') {
-      addWin(winnerId); // players.js
-      // 5本先取チェック
+      addWin(winnerId);
       const winner = getQuickModeWinner();
       if (winner) { _endGame(); return; }
     } else {
-      // Score Mode: round.js で計算済みの points をそのまま加算する
       const player = getPlayerById(winnerId);
       if (player) player.score += points;
     }
   }
 
-  // ペナルティは次ラウンド開始時まで維持（resetPenalties は nextRound 冒頭で呼ばない）
-  // → 次ラウンド開始前に resetDeclarations() のみ呼ぶ（round.js の startRound 内で実施済み）
-
-  // Score Mode: 10ラウンド終了チェック
   if (gameMode === 'score' && currentRound >= SCORE_ROUNDS) {
     _endGame();
     return;
   }
 
-  // 次のラウンドへ（UIが確認後に nextRound() を呼ぶ）
   if (onPhaseChange) onPhaseChange('round_ended', result);
 }
 

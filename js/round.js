@@ -1,8 +1,10 @@
 /**
  * round.js
  * ラウンド管理（宣言受付・解答フェーズ・正誤判定・得点計算）
- *
- * ラウンドのフロー:
+ */
+
+import { declareMove, passPlayer, getSortedDeclarations, getPlayers, penalizePlayer } from './players.js';
+import { startThinkingTimer, startAdditionalTimer, stopTimer, getRemainingSeconds, THINKING_TIME_SEC } from './timer.js';
  *   startRound()
  *     → 思考フェーズ（プレイヤーが盤面を見て考える）
  *     → submitDeclaration() で最初の宣言 → アディショナルタイム開始

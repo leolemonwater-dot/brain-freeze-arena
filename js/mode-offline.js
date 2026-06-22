@@ -22,6 +22,15 @@ import { stopTimer } from './timer.js';
 import { sfxDeclare } from './sound.js';
 
 // -------------------------------------------------------
+// 盤面生成コールバック（mode.jsに渡す）
+// -------------------------------------------------------
+
+function _onGenerateBoard(onDone) {
+  generateBoardOffline();
+  if (onDone) onDone();
+}
+
+// -------------------------------------------------------
 // ゲーム開始
 // -------------------------------------------------------
 
@@ -36,7 +45,7 @@ export function startOfflineGame(mode, playerNames) {
     return;
   }
   setupGame(mode, playerNames, _onGameEnd);
-  nextRound(_onPhaseChange);
+  nextRound(_onPhaseChange, _onGenerateBoard);
 }
 
 // -------------------------------------------------------
@@ -138,7 +147,7 @@ function _onPhaseChange(phase, data) {
     updateScoreboard(false, null);
     if (currentMovesEl) currentMovesEl.style.display = 'none';
     _hideDpadShowDeclare();
-    setTimeout(() => nextRound(_onPhaseChange), 3000);
+    setTimeout(() => nextRound(_onPhaseChange, _onGenerateBoard), 3000);
   } else if (phase === 'ended') {
     if (currentMovesEl) currentMovesEl.style.display = 'none';
   }

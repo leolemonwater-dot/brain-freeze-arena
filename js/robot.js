@@ -3,6 +3,8 @@
  * ロボット移動ロジック
  */
 
+import { SIZE, walls } from './board.js';
+
 /**
  * 指定方向にロボットを滑らせ、止まる座標を返す
  * @param {number} startX
