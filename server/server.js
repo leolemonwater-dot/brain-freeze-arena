@@ -256,12 +256,15 @@ io.on('connection', (socket) => {
     const room = roomManager.getRoom(roomId);
     if (!room) return;
 
-    // 全員が戻ったかは個別に管理しない（各自のタイミングで戻る）
     socket.join(roomId);
 
-    // 部屋がfinishedならwaitingにリセット
+    // 部屋がfinishedならwaitingにリセット（全員のisReadyもリセット）
     if (room.status === 'finished') {
       roomManager.resetRoom(roomId);
+    } else {
+      // ゲーム中以外でも、戻ってきたプレイヤーの準備状態をリセット
+      const player = room.players.find(p => p.id === socket.id);
+      if (player) player.isReady = false;
     }
 
     io.to(roomId).emit('roomUpdated', roomPublicInfo(room));
@@ -290,23 +293,31 @@ io.on('connection', (socket) => {
       isRetire
     });
 
-    // ゲーム中の切断処理
+    // ゲーム中の切断処理（切断扱い・リタイア共通）
     if (room.status === 'playing') {
       gameManager.handleDisconnect(room, socket.id);
     }
 
-    // 待機中の場合は即座に除外
+    // 待機中 or リタイア：プレイヤーを即除外
+    // ゲーム中のリタイアは handleDisconnect が勝ち判定を行った後に除外する
     if (room.status === 'waiting' || isRetire) {
-      const deleted = roomManager.leaveRoom(roomId, socket.id);
-      if (deleted) {
-        console.log(`部屋削除: ${roomId}`);
-      } else {
-        // ホスト交代が発生した場合は通知
-        const updatedRoom = roomManager.getRoom(roomId);
-        if (updatedRoom) {
-          io.to(roomId).emit('roomUpdated', roomPublicInfo(updatedRoom));
-          io.to(roomId).emit('hostChanged', { newHostId: updatedRoom.hostId });
+      // ゲーム中リタイアは少し遅らせてから除外（handleDisconnect の判定を先に走らせる）
+      const doLeave = () => {
+        const deleted = roomManager.leaveRoom(roomId, socket.id);
+        if (deleted) {
+          console.log(`部屋削除: ${roomId}`);
+        } else {
+          const updatedRoom = roomManager.getRoom(roomId);
+          if (updatedRoom) {
+            io.to(roomId).emit('roomUpdated', roomPublicInfo(updatedRoom));
+            io.to(roomId).emit('hostChanged', { newHostId: updatedRoom.hostId });
+          }
         }
+      };
+      if (isRetire && room.status === 'playing') {
+        setTimeout(doLeave, 1500);
+      } else {
+        doLeave();
       }
       return;
     }

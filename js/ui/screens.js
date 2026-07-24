@@ -88,7 +88,7 @@ function showResultScreen({ winner, players, mode, gameType }) {
       if (topPlayers.length > 1) {
         winnerEl.textContent = `同率1位: ${topPlayers.map(p => p.name).join(' & ')}`;
       } else {
-        winnerEl.textContent = `🏆 ${winner.name} の勝利！`;
+        winnerEl.textContent = `${winner.name} の勝利！`;
       }
     }
   }

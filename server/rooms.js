@@ -57,7 +57,7 @@ class RoomManager {
       hostName: room.players.find(p => p.id === room.hostId)?.name ?? '不明',
       mode: room.mode,
       playerCount: room.players.filter(p => !p.disconnected).length,
-      maxPlayers: 4,
+      maxPlayers: 6,
       status: room.status
     }));
   }
@@ -98,7 +98,7 @@ class RoomManager {
 
     // 新規参加チェック
     if (room.status !== 'waiting') return null;
-    if (room.players.filter(p => !p.disconnected).length >= 4) return null;
+    if (room.players.filter(p => !p.disconnected).length >= 6) return null;
     const player = this._createPlayer(socketId, playerName, false);
     room.players.push(player);
 

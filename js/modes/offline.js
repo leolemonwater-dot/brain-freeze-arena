@@ -1,25 +1,24 @@
 /**
- * mode-offline.js
+ * modes/offline.js
  * オフライン対戦専用ロジック
  *
- * 依存: game-controller.js, mode.js, round.js, ui.js
+ * 依存: game-controller.js, core/mode.js, core/round.js, ui/screens.js
  * 循環依存なし
  */
 
 import {
-  robots, selectedRobot, moves, goal, goalColor, selectedPlayerId,
-  COLORS, boardEl,
+  selectedPlayerId,
   initMode, setStatus, showResultPopup, generateBoardData, placeGoal, placeRobots,
   resetRobotsToInitial, moveSelectedRobot, updateMovesDisplay,
   updateScoreboard, updateRoundInfo, selectPlayer, updateSelectedPlayerHint,
   _updateDeclarePanel, currentMovesEl, timerEl
-} from './game-controller.js';
-import { setupGame, nextRound, getGameMode, getCurrentRound, SCORE_ROUNDS } from './mode.js';
-import { getRoundPhase, getCurrentAnswerer, resolveAnswer, submitDeclaration, submitPass } from './round.js';
-import { getPlayers, getPlayerById } from './players.js';
-import { showResultScreen, showScreen, showConfirmDialog } from './ui.js';
-import { stopTimer } from './timer.js';
-import { sfxDeclare } from './sound.js';
+} from '../game-controller.js';
+import { setupGame, nextRound, getGameMode } from '../core/mode.js';
+import { getRoundPhase, getCurrentAnswerer, resolveAnswer, submitDeclaration, submitPass } from '../core/round.js';
+import { getPlayers, getPlayerById } from '../core/players.js';
+import { showResultScreen } from '../ui/screens.js';
+import { stopTimer } from '../core/timer.js';
+import { sfxDeclare } from '../core/sound.js';
 
 // -------------------------------------------------------
 // 盤面生成コールバック（mode.jsに渡す）

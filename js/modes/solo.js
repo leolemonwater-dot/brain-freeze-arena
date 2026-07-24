@@ -1,23 +1,23 @@
 /**
- * mode-solo.js
+ * modes/solo.js
  * ソロ練習専用ロジック
  *
- * 依存: game-controller.js
+ * 依存: game-controller.js, core/sound.js
  * 循環依存なし
  */
 
 import {
-  moves, selectedRobot, goal, goalColor,
+  goal, goalColor,
   setStatus, showResultPopup, generateBoardData, placeGoal, placeRobots,
   resetRobotsToInitial, _spawnGoalParticles
-} from './game-controller.js';
-import { sfxDeclare, sfxGoal } from './sound.js';
+} from '../game-controller.js';
+import { sfxDeclare, sfxGoal } from '../core/sound.js';
 
 // -------------------------------------------------------
 // ソロ専用状態
 // -------------------------------------------------------
 
-export let soloPhase        = 'thinking'; // 'thinking' | 'answering'
+export let soloPhase         = 'thinking'; // 'thinking' | 'answering'
 export let soloDeclaredMoves = 0;
 
 export function setSoloPhase(phase) { soloPhase = phase; }
@@ -34,7 +34,6 @@ export function onDeclareSolo(movesVal) {
   soloDeclaredMoves = movesVal;
   soloPhase = 'answering';
 
-  // moves は game-controller の変数を直接操作
   resetRobotsToInitial();
   setStatus(`宣言: ${movesVal}手以内でゴールを目指せ！`);
   sfxDeclare();

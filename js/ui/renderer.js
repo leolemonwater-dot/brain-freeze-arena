@@ -3,7 +3,7 @@
  * DOM描画（盤面セル・壁・ゴール・ロボットの表示）
  */
 
-import { SIZE, walls } from './board.js';
+import { SIZE, walls } from '../core/board.js';
 
 /**
  * 空の盤面セルをDOMに生成する

@@ -1165,6 +1165,40 @@
       #declare-select, .declare-input-group, #declare-btn, #pass-btn { width: 100%; }
       .back-button { font-size: 0.8rem; padding: 6px 12px; }
     }
+    /* ---- トースト通知（宣言通知など） ---- */
+    #toast-container {
+      position: fixed;
+      bottom: 80px; /* 宣言パネルの上 */
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 500;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: rgba(30, 30, 40, 0.88);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
   </style>
 </head>
 <body>
@@ -1175,13 +1209,13 @@
     </div>
     <div class="title-buttons">
       <button class="title-btn online" onclick="goToOnlineMode()">
-        🌐 オンライン対戦
+        オンライン対戦
       </button>
       <button class="title-btn offline" onclick="goToOfflineMode()">
-        👥 オフライン対戦
+        オフライン対戦
       </button>
       <button class="title-btn solo" onclick="goToSoloMode()">
-        🎯 ソロ練習
+        ソロ練習
       </button>
     </div>
   </div>
@@ -1237,7 +1271,7 @@
       </div>
 
       <div class="rooms-list" id="rooms-list">
-        <div class="empty-message">🔄 更新ボタンを押して部屋を読み込んでください</div>
+        <div class="empty-message">更新ボタンを押して部屋を読み込んでください</div>
       </div>
     </div>
   </div>
@@ -1259,7 +1293,7 @@
           <button class="leave-btn" onclick="leaveRoom()">退出</button>
         </div>
         <div class="players-list">
-          <h3>参加プレイヤー（<span id="player-count">0</span>/4）</h3>
+          <h3>参加プレイヤー（<span id="player-count">0</span>/6）</h3>
           <div id="players-container"></div>
         </div>
         <div class="room-actions" id="room-actions"></div>
@@ -1287,7 +1321,7 @@
       </button>
     </div>
 
-    <p style="margin-bottom:12px; font-weight:600; color:#374151;">プレイヤーを追加（2〜4人）</p>
+    <p style="margin-bottom:12px; font-weight:600; color:#374151;">プレイヤーを追加（2〜6人）</p>
     <ul id="player-list"></ul>
     <div class="add-player-row">
       <input type="text" id="player-name-input" placeholder="プレイヤー名" maxlength="12" />
@@ -1323,7 +1357,7 @@
       </button>
       <button onclick="regenerateGoalAndReset()"
         style="flex:1; padding:10px; background:#667eea; color:#fff; border:none; border-radius:8px; font-weight:700; font-size:0.95rem; cursor:pointer;">
-        🎯 ゴール再生成
+        ゴール再生成
       </button>
     </div>
 
@@ -1350,8 +1384,6 @@
     <!-- 宣言パネル（固定下部） -->
     <div id="declare-panel" style="display:none">
       <h3>手数を宣言する</h3>
-        👆 上のプレイヤーカードをクリックして選択してください
-      </p>
       <div class="declare-controls">
         <div class="declare-input-group">
           <button onclick="changeDeclareMove(-1)"
@@ -1391,6 +1423,9 @@
       </div>
     </div>
   </div>
+
+  <!-- トースト通知コンテナ（宣言通知など） -->
+  <div id="toast-container"></div>
 
   <!-- Socket.IO クライアント（ESモジュールより先に読み込む必要あり） -->
   <script src="/socket.io/socket.io.js"></script>

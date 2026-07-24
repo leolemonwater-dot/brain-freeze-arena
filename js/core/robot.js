@@ -3,7 +3,7 @@
  * ロボット移動ロジック
  */
 
-import { SIZE, walls } from './board.js';
+import { SIZE, walls } from './board.js'; // 同じ core/ 内
 
 /**
  * 指定方向にロボットを滑らせ、止まる座標を返す

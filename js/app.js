@@ -1,12 +1,12 @@
 /**
  * app.js
  * エントリーポイント
- * 画面遷移・モード切り替え・キー操作
+ * 画面遷移・モード切り替え・キー操作・windowグローバル登録
  *
  * <script type="module" src="js/app.js"> で読み込む
  */
 
-import { showScreen, showConfirmDialog, showResultScreen } from './ui.js';
+import { showScreen, showConfirmDialog, showResultScreen } from './ui/screens.js';
 import {
   initMode, setStatus, showResultPopup,
   generateBoardData, placeGoal, placeRobots,
@@ -17,19 +17,19 @@ import {
   _updateDpadPenguin, _spawnGoalParticles,
   setSelectedRobot, setMoves, setGoal, setGoalColor, setSelectedPlayerId
 } from './game-controller.js';
-import { startOfflineGame, onDeclareOffline, onPassOffline, generateBoardOffline } from './mode-offline.js';
-import { onDeclareSolo, onGoalSolo, generateBoardSolo, soloPhase, setSoloPhase } from './mode-solo.js';
+import { startOfflineGame, onDeclareOffline, onPassOffline, generateBoardOffline } from './modes/offline.js';
+import { onDeclareSolo, onGoalSolo, generateBoardSolo, soloPhase, setSoloPhase } from './modes/solo.js';
 import {
   initSocket, isOnlineMode, isMyTurn,
   enterLobby, refreshRooms, createRoom, joinRoom,
   toggleReady, startOnlineGame, leaveRoom, returnToRoom,
   sendDeclare, sendPass, sendMove, sendGoalReached, sendRetire,
   toggleCreateRoomForm, getMyPlayerId
-} from './mode-online.js';
-import { getRoundPhase, getCurrentAnswerer, resolveAnswer } from './round.js';
-import { getPlayers, getPlayerById } from './players.js';
-import { stopTimer } from './timer.js';
-import { sfxDeclare } from './sound.js';
+} from './modes/online.js';
+import { getRoundPhase, getCurrentAnswerer, resolveAnswer } from './core/round.js';
+import { getPlayers, getPlayerById } from './core/players.js';
+import { stopTimer } from './core/timer.js';
+import { sfxDeclare } from './core/sound.js';
 
 // -------------------------------------------------------
 // モジュールスコープの状態変数
@@ -103,10 +103,10 @@ window.onEnterLobby = function() {
   enterLobby(name);
 };
 
-// index.htmlのonclick="enterLobby()" から呼ばれる
+// index.html の onclick="enterLobby()" から呼ばれる
 window.enterLobby = window.onEnterLobby;
 
-// index.htmlのonclick="showScreen(...)" から呼ばれる
+// index.html の onclick="showScreen(...)" から呼ばれる
 window.showScreen = showScreen;
 
 // -------------------------------------------------------
@@ -121,8 +121,7 @@ window.onCreateRoom = function() {
   createRoom(mode);
 };
 
-window.createRoom = window.onCreateRoom; // index.html の onclick="createRoom()" 対応
-
+window.createRoom    = window.onCreateRoom; // index.html の onclick="createRoom()" 対応
 window.onlineJoinRoom = function(roomId) { joinRoom(roomId); };
 
 // -------------------------------------------------------
@@ -148,7 +147,7 @@ window.addPlayerToSetup = function() {
   const input = document.getElementById('player-name-input');
   const name  = input.value.trim();
   if (!name) return;
-  if (setupPlayers.length >= 4) { alert('最大4人まで'); return; }
+  if (setupPlayers.length >= 6) { alert('最大6人まで'); return; }
   if (setupPlayers.some(p => p.name === name)) { alert('同じ名前は登録できません'); return; }
   setupPlayers.push({ name });
   input.value = '';
@@ -269,8 +268,8 @@ window.handlePass = function() {
 };
 
 // ソロ用ボタン
-window.generateBoard     = generateBoardSolo;        // 盤面再生成
-window.regenerateGoalAndReset = function() {          // ゴール再生成
+window.generateBoard          = generateBoardSolo;       // 盤面再生成
+window.regenerateGoalAndReset = function() {             // ゴール再生成
   resetRobotsToInitial();
   placeGoal();
 };
@@ -304,19 +303,19 @@ window.backToTitle    = function() { showScreen('title-screen'); };
 
 function _getMoveOptions() {
   return {
-    isOnline:       isOnlineMode(),
-    isSolo:         currentGameType === 'solo',
-    soloPhase:      soloPhase,
-    myPlayerId:     getMyPlayerId(),
-    onGoalOffline:  (success, usedMoves) => {
+    isOnline:      isOnlineMode(),
+    isSolo:        currentGameType === 'solo',
+    soloPhase:     soloPhase,
+    myPlayerId:    getMyPlayerId(),
+    onGoalOffline: (success, usedMoves) => {
       if (currentGameType === 'solo') {
         if (success) onGoalSolo();
       } else {
         resolveAnswer(success, usedMoves);
       }
     },
-    onGoalOnline:   (color, usedMoves) => sendGoalReached(color, usedMoves),
-    onWrongOnline:  (color, usedMoves) => sendGoalReached(color, usedMoves),
-    onMoveOnline:   (color, dx, dy)    => sendMove(color, dx, dy),
+    onGoalOnline:  (color, usedMoves) => sendGoalReached(color, usedMoves),
+    onWrongOnline: (color, usedMoves) => sendGoalReached(color, usedMoves),
+    onMoveOnline:  (color, dx, dy)    => sendMove(color, dx, dy),
   };
 }

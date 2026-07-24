@@ -1,32 +1,31 @@
 /**
- * mode-online.js
- * オンライン対戦専用ロジック（lobby-client + online を統合）
+ * modes/online.js
+ * オンライン対戦専用ロジック（ロビー + ゲーム + Socket.IO を統合）
  *
- * 依存: game-controller.js, players.js, round.js, mode.js, ui.js, sound.js
- * 循環依存なし（game-controller からのみ受け取り、game-controller を呼ばない）
+ * 依存: game-controller.js, core/*, ui/*, 循環依存なし
  */
 
 import {
-  robots, selectedRobot, boardEl, currentMovesEl, timerEl,
+  robots, currentMovesEl, timerEl,
   setStatus, showResultPopup, updateScoreboard, updateRoundInfo,
   resetRobotsToInitial, updateMovesDisplay, _spawnGoalParticles,
   placeGoal, placeRobots, selectPlayer, _updateDpadPenguin,
-  COLORS
-} from './game-controller.js';
+  COLORS, initMode
+} from '../game-controller.js';
 import {
   renderEmptyBoard, drawWalls, renderGoal, createRobotEl,
   addRobotAura, removeRobotAura, setRobotFacing, moveRobotEl
-} from './renderer.js';
-import { getPlayers, getPlayerById, resetAllPlayers, addPlayer, resetDeclarations } from './players.js';
+} from '../ui/renderer.js';
+import { getPlayers, getPlayerById, resetAllPlayers, addPlayer, resetDeclarations } from '../core/players.js';
 import {
   getRoundPhase, getCurrentAnswerer, setRoundPhaseOnline, _setOnlineAnswerer
-} from './round.js';
-import { getGameMode, _setOnlineGameMode } from './mode.js';
-import { showScreen, showResultScreen } from './ui.js';
-import { calcRobotDestination } from './robot.js';
-import { walls, setWalls } from './board.js';
-import { sfxGoal, sfxTick, sfxDeclare } from './sound.js';
-import { initMode } from './game-controller.js';
+} from '../core/round.js';
+import { getGameMode, _setOnlineGameMode } from '../core/mode.js';
+import { showScreen, showResultScreen } from '../ui/screens.js';
+import { calcRobotDestination } from '../core/robot.js';
+import { walls, setWalls } from '../core/board.js';
+import { sfxGoal, sfxTick, sfxDeclare } from '../core/sound.js';
+import { setSelectedRobot, setGoal, setGoalColor } from '../core/boardState.js';
 
 // -------------------------------------------------------
 // オンライン状態
@@ -63,8 +62,8 @@ export function initSocket() {
   return _socket;
 }
 
-export function getSocket()    { return _socket; }
-export function getMyPlayerId(){ return _myPlayerId; }
+export function getSocket()     { return _socket; }
+export function getMyPlayerId() { return _myPlayerId; }
 
 // -------------------------------------------------------
 // ロビー操作
@@ -101,14 +100,15 @@ export function startOnlineGame() {
 
 export function leaveRoom() {
   if (_roomId) _socket?.emit('retire', { roomId: _roomId });
-  _roomId   = null;
-  _isHost   = false;
-  _isReady  = false;
+  _roomId  = null;
+  _isHost  = false;
+  _isReady = false;
   showScreen('lobby-screen');
   refreshRooms();
 }
 
 export function returnToRoom() {
+  _isReady = false; // 準備状態をリセット
   _socket?.emit('returnToRoom', { roomId: _roomId });
   _active = false;
   showScreen('room-screen');
@@ -147,8 +147,8 @@ export function sendGoalReached(robotColor, usedMoves) {
 }
 
 export function sendRetire() {
+  _active = false; // 先にフラグを落として timerTick の音を止める
   _socket?.emit('retire', { roomId: _roomId });
-  _active = false;
 }
 
 // -------------------------------------------------------
@@ -211,22 +211,19 @@ function _setupLobbyListeners() {
 
   // ゲーム開始 → ゲーム画面へ
   _socket.on('gameStarted', ({ room }) => {
-    _active      = true;
-    _myPlayerId  = _socket.id;
+    _active     = true;
+    _myPlayerId = _socket.id;
 
-    // 状態リセット（setOnlineModeActiveはinitMode内で処理）
     initMode('online', (val) => { _active = val; });
 
-    // プレイヤー登録
     resetAllPlayers();
     room.players.forEach(p => {
-      const player = addPlayer(p.name);
-      player.id    = p.id;
+      const player  = addPlayer(p.name);
+      player.id     = p.id;
       player.isHost = p.isHost;
     });
     _setOnlineGameMode(room.mode ?? 'quick', 0);
 
-    // ゲーム画面へ
     window.currentGameType = 'online';
     showScreen('game-screen');
     const dp = document.getElementById('declare-panel');
@@ -234,7 +231,6 @@ function _setupLobbyListeners() {
     const sb = document.getElementById('solo-buttons');
     if (sb) sb.style.display = 'none';
 
-    // ゲームイベントリスナー（2重登録防止）
     _setupGameListeners();
   });
 }
@@ -253,7 +249,6 @@ function _setupGameListeners() {
   _socket.on('boardSynced', (boardData) => {
     setRoundPhaseOnline('thinking');
     resetDeclarations();
-    // moves リセットは game-controller 側の変数
     const display = document.getElementById('declare-moves-display');
     if (display) display.textContent = '3';
     _applyBoardData(boardData);
@@ -277,14 +272,14 @@ function _setupGameListeners() {
     } else if (phase === 'answering') {
       setRoundPhaseOnline('answering');
       _setOnlineAnswerer(answererId, declaredMoves);
-      // selectedPlayerId を更新（game-controller の変数）
       window._gcSetSelectedPlayerId && window._gcSetSelectedPlayerId(answererId);
       _onPhaseAnswering(answererId, answererName, declaredMoves);
     }
   });
 
-  // タイマー
+  // タイマー（ゲーム画面表示中のみ処理）
   _socket.on('timerTick', ({ phase, remaining }) => {
+    if (!_active) return; // ゲーム画面以外では音も表示もスキップ
     if (!timerEl) return;
     if (phase === 'thinking') {
       timerEl.textContent = `思考中... 残り ${remaining}秒`;
@@ -301,11 +296,15 @@ function _setupGameListeners() {
     }
   });
 
-  // 宣言受信
-  _socket.on('playerDeclared', ({ playerId, moves: m }) => {
+  // 宣言受信 → トースト表示 + スコアボード更新
+  _socket.on('playerDeclared', ({ playerId, playerName, moves: m }) => {
     const p = getPlayerById(playerId);
     if (p) p.declaration = { playerId, moves: m, timestamp: Date.now() };
     updateScoreboard(true, _myPlayerId);
+
+    // 宣言トースト（全員に表示）
+    const label = playerId === _myPlayerId ? 'あなた' : _esc(playerName);
+    _showToast(`${label} が ${m} 手で宣言しました`);
   });
 
   // パス受信
@@ -322,9 +321,6 @@ function _setupGameListeners() {
     const [dx, dy] = _dirToVec(direction);
     const dir = dx === -1 ? 'left' : dx === 1 ? 'right' : dy === -1 ? 'up' : 'down';
     setRobotFacing(robot, dir);
-    // selectedRobot を一時的に置き換えて移動
-    const prevSelected = selectedRobot;
-    // 移動計算
     const startX = parseInt(robot.dataset.x);
     const startY = parseInt(robot.dataset.y);
     const { x, y } = calcRobotDestination(startX, startY, dx, dy, robots, robot);
@@ -337,32 +333,29 @@ function _setupGameListeners() {
   });
 
   // ゴール到達アニメーション（閲覧者用）
+  // ※ answerResult で success が来るまで正解表示はしない
   _socket.on('goalReached', ({ robotColor }) => {
-    if (isMyTurn()) return; // 解答者は game-controller で処理済み
+    if (isMyTurn()) return; // 解答者は game-controller 側で処理済み
     const robot = robots.find(r => r.dataset.color === robotColor);
     if (robot) {
       robot.classList.add('correct');
       const gs = document.querySelector('.goalStar');
       if (gs) gs.classList.add('goal-reached');
-      showResultPopup(true);
+      // ここでは正解ポップアップを出さない（answerResult を待つ）
       setTimeout(() => robot.classList.remove('correct'), 600);
     }
+  });
+
+  // 解答結果（正解 or 不正解）
+  _socket.on('answerResult', ({ playerId, success }) => {
+    if (playerId === _myPlayerId) return; // 自分の結果は game-controller 側で処理済み
+    showResultPopup(success);
   });
 
   // ロボットリセット
   _socket.on('resetRobots', () => {
     resetRobotsToInitial();
     updateMovesDisplay();
-  });
-
-  // 解答結果（不正解アニメーション）
-  _socket.on('answerResult', ({ playerId, success }) => {
-    if (!success && playerId !== _myPlayerId) {
-      // 他プレイヤーの不正解
-      const answerer = getCurrentAnswerer();
-      const robot = robots.find(r => r.dataset.color);
-      // 特定のロボットを強調する処理は省略（ステータスで表示）
-    }
   });
 
   // ラウンド終了
@@ -380,14 +373,14 @@ function _setupGameListeners() {
         setStatus(`正解！ ${name} が獲得`);
         if (getGameMode() === 'score' && points > 0) {
           const decl = winner?.declaration;
-          _showPopup(`🎉 ${additionalStartSec}秒 × ${decl?.moves ?? '?'}手 = ${points}点`, true);
+          _showPopup(`${additionalStartSec}秒 x ${decl?.moves ?? '?'}手 = ${points}点`, true);
         }
       } else {
         if (getGameMode() === 'score' && points > 0) {
           const decl = getPlayerById(winnerId)?.declaration;
           _showPopup(`${name} の正解！\n${additionalStartSec}秒 × ${decl?.moves ?? '?'}手 = ${points}点`, true);
         } else {
-          _showPopup(`${name} の正解！🎉`, true);
+          _showPopup(`${name} の正解！`, true);
         }
         setStatus(`${name} の正解！`);
       }
@@ -437,6 +430,60 @@ function _setupGameListeners() {
     }
   });
   _socket.on('error', ({ message }) => alert(message));
+
+  // -------------------------------------------------------
+  // 再接続：サーバーからゲーム状態を受け取って画面を復元
+  // -------------------------------------------------------
+  _socket.on('reconnected', ({ room, gameState, players: serverPlayers }) => {
+    // プレイヤー情報を復元
+    resetAllPlayers();
+    room.players.forEach(p => {
+      const player  = addPlayer(p.name);
+      player.id     = p.id;
+      player.isHost = p.isHost;
+    });
+    // スコア・宣言・ペナルティを上書き
+    if (serverPlayers) {
+      serverPlayers.forEach(sp => {
+        const p = getPlayerById(sp.id);
+        if (!p) return;
+        p.wins        = sp.wins;
+        p.score       = sp.score;
+        p.penalized   = sp.penalized;
+        p.declaration = sp.declaration;
+        p.passed      = sp.passed;
+      });
+    }
+
+    // ゲーム中でなければロビーへ
+    if (!gameState) {
+      _active = false;
+      showScreen('room-screen');
+      return;
+    }
+
+    // ゲーム画面を復元
+    _active     = true;
+    _roomId     = room.id;
+    _myPlayerId = _socket.id;
+    _setOnlineGameMode(room.mode ?? 'quick', gameState.currentRound);
+    window.currentGameType = 'online';
+
+    showScreen('game-screen');
+    document.getElementById('solo-buttons').style.display  = 'none';
+    document.getElementById('declare-panel').style.display = 'block';
+
+    // 盤面を復元
+    if (gameState.boardData) {
+      _applyBoardData(gameState.boardData);
+    }
+
+    // フェーズを復元
+    setRoundPhaseOnline(gameState.phase ?? 'thinking');
+    updateScoreboard(true, _myPlayerId);
+    updateRoundInfo();
+    setStatus('再接続しました');
+  });
 }
 
 // -------------------------------------------------------
@@ -465,7 +512,7 @@ function _onPhaseAnswering(answererId, answererName, declaredMoves) {
   _showDpadHideDeclare();
 
   if (answererId === _myPlayerId) {
-    setStatus('🎯 あなたの番です！');
+    setStatus('あなたの番です！');
   } else {
     setStatus(`${answererName} が解答中`);
   }
@@ -476,14 +523,11 @@ function _onPhaseAnswering(answererId, answererName, declaredMoves) {
 // -------------------------------------------------------
 
 function _applyBoardData(boardData) {
-  // walls をサーバーから受信したデータで置き換える
   setWalls(boardData.walls);
-
-  renderEmptyBoard(boardEl);
+  renderEmptyBoard(document.getElementById('board'));
   drawWalls();
 
   document.querySelectorAll('.robot').forEach(e => e.remove());
-  // robots 配列をクリア（game-controller の変数）
   robots.length = 0;
 
   boardData.robots.forEach(rd => {
@@ -491,7 +535,6 @@ function _applyBoardData(boardData) {
       if (!isMyTurn()) return;
       document.querySelectorAll('.robot').forEach(ro => removeRobotAura(ro));
       addRobotAura(robotEl);
-      // selectedRobot 更新
       window._gcSetSelectedRobot && window._gcSetSelectedRobot(robotEl);
       _updateDpadPenguin(robotEl.dataset.color);
     });
@@ -500,24 +543,23 @@ function _applyBoardData(boardData) {
     robots.push(r);
   });
 
-  // goal/goalColor 更新（game-controller の変数）
   window._gcSetGoal && window._gcSetGoal(boardData.goal, boardData.goalColor);
   renderGoal(boardData.goal, boardData.goalColor);
 }
 
 // -------------------------------------------------------
-// UI ユーティリティ
+// UIユーティリティ
 // -------------------------------------------------------
 
 function _updateDeclarePanelOnline() {
-  const hintEl    = document.getElementById('selected-player-hint');
+  const hintEl     = document.getElementById('selected-player-hint');
   const declareBtn = document.getElementById('declare-btn');
   if (hintEl) hintEl.style.display = 'none';
   if (declareBtn) {
     const myPlayer = getPlayers().find(p => p.id === _myPlayerId);
     const declared = myPlayer?.declaration !== null;
     const phase    = getRoundPhase();
-    declareBtn.disabled    = declared || phase === 'answering';
+    declareBtn.disabled      = declared || phase === 'answering';
     declareBtn.style.opacity = (declared || phase === 'answering') ? '0.5' : '1';
   }
 }
@@ -577,6 +619,28 @@ function _showPopup(message, isCorrect = true) {
   el.textContent = message;
   el.className = isCorrect ? 'correct show' : 'incorrect show';
   setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+/**
+ * 宣言通知などに使うトースト（下部に積み上がる通知）
+ * @param {string} message
+ */
+function _showToast(message) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className   = 'toast';
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  // アニメーション付きで表示
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
 }
 
 function _esc(str) {
